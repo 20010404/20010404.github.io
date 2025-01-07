@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MBTI Questionnaire</title>
+    <script defer src="questionnaire.js"></script>
+</head>
+
+<body>
+    <h1>Answer the MBTI Questionnaire</h1>
+    <p id="info"></p>
+    <form id="questionnaire-form">
+        <label for="ie">I/E Percentage:</label>
+        <input type="text" id="ie" name="ie" placeholder="e.g., 70%E" required><br>
+
+        <label for="ns">N/S Percentage:</label>
+        <input type="text" id="ns" name="ns" placeholder="e.g., 60%N" required><br>
+
+        <label for="ft">F/T Percentage:</label>
+        <input type="text" id="ft" name="ft" placeholder="e.g., 80%T" required><br>
+
+        <label for="jp">J/P Percentage:</label>
+        <input type="text" id="jp" name="jp" placeholder="e.g., 50%J" required><br>
+
+        <button type="submit">Submit</button>
+    </form>
+    <p id="response-message"></p>
+</body>
+
+</html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MBTI Study Dashboard</title>
+</head>
+
+<body>
+    <h1>Welcome, {{ username }}!</h1>
+    <form id="generateForm" action="/generate_qr" method="POST">
+        <label for="social">Social Types:</label>
+        <select id="social" name="social">
+            <option value="Family">Family</option>
+            <option value="Friends">Friends</option>
+            <option value="Labmates">Labmates</option>
+            <option value="Teachers">Teachers</option>
+            <option value="Romance">Romance</option>
+            <option value="Other">Other</option>
+        </select>
+
+        <label for="intimacy">Intimacy:</label>
+        <select id="intimacy" name="intimacy">
+            <option value="High">High</option>
+            <option value="Medium">Medium</option>
+            <option value="Low">Low</option>
+        </select>
+
+        <label for="known_time">Known Time:</label>
+        <select id="known_time" name="known_time">
+            <option value="Days">Days</option>
+            <option value="Months">Months</option>
+            <option value="Years">Years</option>
+        </select>
+
+        <button type="submit">Generate QR Code</button>
+    </form>
+
+    <div id="qrCodeSection">
+        <h2>Your QR Code:</h2>
+        <img id="qrCodeImage" src="{{ qr_code_url }}" alt="QR Code">
+    </div>
+</body>
+
+</html>
