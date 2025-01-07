@@ -6,60 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MBTI Questionnaire</title>
 </head>
-<script type="module">
-    // Import Firebase modules
-    async function submitQuestionnaire(event) {
-        console.log("submitQuestionnaire triggered!");
-        event.preventDefault();
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const username = urlParams.get("username");
-        const social = urlParams.get("social");
-        const intimacy = urlParams.get("intimacy");
-        const knownTime = urlParams.get("known_time");
-
-        console.log("Username:", username);
-        console.log("Social:", social);
-        console.log("Intimacy:", intimacy);
-        console.log("Known Time:", knownTime);
-
-        if (!username || !social || !intimacy || !knownTime) {
-            alert("Invalid questionnaire link.");
-            window.location.href = "index.html";
-        }
-        else {
-            document.getElementById("username").textContent = username;
-            document.getElementById("social").textContent = social;
-            document.getElementById("intimacy").textContent = intimacy;
-            document.getElementById("known-time").textContent = knownTime;
-        }
-
-
-        const data = {
-            username: username,
-            social: social,
-            intimacy: intimacy,
-            known_time: knownTime,
-            ie: document.getElementById("ie").value,
-            ns: document.getElementById("ns").value,
-            ft: document.getElementById("ft").value,
-            jp: document.getElementById("jp").value,
-            timestamp: new Date().toISOString()
-        };
-
-        console.log("Data:", data);
-
-        try {
-            const dbRef = ref(database, "responses");
-            await push(dbRef, data);
-            alert("Thank you for submitting your response!");
-            document.getElementById("questionnaire-form").reset();
-        } catch (error) {
-            console.error("Error saving data to Firebase:", error);
-            alert("An error occurred while saving the questionnaire.");
-        }
-    }
-</script>
 
 <body>
     <h1>MBTI Questionnaire for <span id="username"></span></h1>
@@ -83,7 +29,82 @@
         <button type="submit">Submit</button>
     </form>
 
+    <script type="module">
+        // 页面加载后初始化内容
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-analytics.js";
+        import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
 
+        document.addEventListener("DOMContentLoaded", () => {
+            console.log("Initializing page...");
+            // Firebase configuration
+            const firebaseConfig = {
+                apiKey: "AIzaSyCvc9C5PuDqrI26jrmsg5b1PVOW6_k43W4",
+                authDomain: "mbti-kale.firebaseapp.com",
+                databaseURL: "https://mbti-kale-default-rtdb.asia-southeast1.firebasedatabase.app",
+                projectId: "mbti-kale",
+                storageBucket: "mbti-kale.firebasestorage.app",
+                messagingSenderId: "756176954275",
+                appId: "1:756176954275:web:7581e5e485e426b33ff016",
+                measurementId: "G-B6F0F4JZ7E"
+            };
+
+            // Initialize Firebase
+            const app = initializeApp(firebaseConfig);
+            const analytics = getAnalytics(app);
+
+            // Initialize Firebase Realtime Database
+            const database = getDatabase(app);
+
+            // Handle URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const username = urlParams.get("username");
+            const social = urlParams.get("social");
+            const intimacy = urlParams.get("intimacy");
+            const knownTime = urlParams.get("known_time");
+
+            console.log("URL Parameters:", { username, social, intimacy, knownTime });
+
+            if (!username || !social || !intimacy || !knownTime) {
+                alert("Invalid questionnaire link. Redirecting to login page.");
+                window.location.href = "index.html";
+            } else {
+                document.getElementById("username").textContent = username;
+                document.getElementById("social").textContent = social;
+                document.getElementById("intimacy").textContent = intimacy;
+                document.getElementById("known-time").textContent = knownTime;
+            }
+
+            // Form submission handler
+            document.getElementById("questionnaire-form").addEventListener("submit", async (event) => {
+                event.preventDefault();
+
+                const data = {
+                    username: username,
+                    social: social,
+                    intimacy: intimacy,
+                    known_time: knownTime,
+                    ie: document.getElementById("ie").value,
+                    ns: document.getElementById("ns").value,
+                    ft: document.getElementById("ft").value,
+                    jp: document.getElementById("jp").value,
+                    timestamp: new Date().toISOString()
+                };
+
+                console.log("Collected Data:", data);
+                try {
+                    const dbRef = ref(database, "responses");
+                    await push(dbRef, data);
+                    console.log("Data saved successfully to Firebase:", data);
+                    alert("Thank you for submitting your response!");
+                    document.getElementById("questionnaire-form").reset();
+                } catch (error) {
+                    console.error("Error saving data to Firebase:", error);
+                    alert("An error occurred while saving the questionnaire.");
+                }
+            });
+        });
+    </script>
 </body>
 
 </html>
