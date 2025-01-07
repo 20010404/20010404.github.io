@@ -6,6 +6,60 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MBTI Questionnaire</title>
 </head>
+<script type="module">
+    // Import Firebase modules
+    async function submitQuestionnaire(event) {
+        console.log("submitQuestionnaire triggered!");
+        event.preventDefault();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const username = urlParams.get("username");
+        const social = urlParams.get("social");
+        const intimacy = urlParams.get("intimacy");
+        const knownTime = urlParams.get("known_time");
+
+        console.log("Username:", username);
+        console.log("Social:", social);
+        console.log("Intimacy:", intimacy);
+        console.log("Known Time:", knownTime);
+
+        if (!username || !social || !intimacy || !knownTime) {
+            alert("Invalid questionnaire link.");
+            window.location.href = "index.html";
+        }
+        else {
+            document.getElementById("username").textContent = username;
+            document.getElementById("social").textContent = social;
+            document.getElementById("intimacy").textContent = intimacy;
+            document.getElementById("known-time").textContent = knownTime;
+        }
+
+
+        const data = {
+            username: username,
+            social: social,
+            intimacy: intimacy,
+            known_time: knownTime,
+            ie: document.getElementById("ie").value,
+            ns: document.getElementById("ns").value,
+            ft: document.getElementById("ft").value,
+            jp: document.getElementById("jp").value,
+            timestamp: new Date().toISOString()
+        };
+
+        console.log("Data:", data);
+
+        try {
+            const dbRef = ref(database, "responses");
+            await push(dbRef, data);
+            alert("Thank you for submitting your response!");
+            document.getElementById("questionnaire-form").reset();
+        } catch (error) {
+            console.error("Error saving data to Firebase:", error);
+            alert("An error occurred while saving the questionnaire.");
+        }
+    }
+</script>
 
 <body>
     <h1>MBTI Questionnaire for <span id="username"></span></h1>
@@ -29,57 +83,7 @@
         <button type="submit">Submit</button>
     </form>
 
-    <script type="module">
-        // Import Firebase modules
-        async function submitQuestionnaire(event) {
-            console.log("submitQuestionnaire triggered!");
-            event.preventDefault();
 
-            const urlParams = new URLSearchParams(window.location.search);
-            const username = urlParams.get("username");
-            const social = urlParams.get("social");
-            const intimacy = urlParams.get("intimacy");
-            const knownTime = urlParams.get("known_time");
-
-            console.log("Username:", username);
-            console.log("Social:", social);
-            console.log("Intimacy:", intimacy);
-            console.log("Known Time:", knownTime);
-
-            if (!username || !social || !intimacy || !knownTime) {
-                alert("Invalid questionnaire link.");
-                window.location.href = "index.html";
-            }
-            document.getElementById("username").textContent = username;
-            document.getElementById("social").textContent = social;
-            document.getElementById("intimacy").textContent = intimacy;
-            document.getElementById("known-time").textContent = knownTime;
-
-            const data = {
-                username: username,
-                social: social,
-                intimacy: intimacy,
-                known_time: knownTime,
-                ie: document.getElementById("ie").value,
-                ns: document.getElementById("ns").value,
-                ft: document.getElementById("ft").value,
-                jp: document.getElementById("jp").value,
-                timestamp: new Date().toISOString()
-            };
-
-            console.log("Data:", data);
-
-            try {
-                const dbRef = ref(database, "responses");
-                await push(dbRef, data);
-                alert("Thank you for submitting your response!");
-                document.getElementById("questionnaire-form").reset();
-            } catch (error) {
-                console.error("Error saving data to Firebase:", error);
-                alert("An error occurred while saving the questionnaire.");
-            }
-        }
-    </script>
 </body>
 
 </html>
