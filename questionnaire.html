@@ -31,26 +31,8 @@
 
     <script type="module">
         // Import Firebase modules
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-        import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
-
-        // Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyCvc9C5PuDqrI26jrmsg5b1PVOW6_k43W4",
-            authDomain: "mbti-kale.firebaseapp.com",
-            projectId: "mbti-kale",
-            databaseURL: "https://mbti-kale-default-rtdb.asia-southeast1.firebasedatabase.app/", // 注意这里需要添加 Realtime Database 的 URL
-            storageBucket: "mbti-kale.appspot.com",
-            messagingSenderId: "756176954275",
-            appId: "1:756176954275:web:7581e5e485e426b33ff016",
-            measurementId: "G-B6F0F4JZ7E"
-        };
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
-
         async function submitQuestionnaire(event) {
+            console.log("submitQuestionnaire triggered!");
             event.preventDefault();
 
             const urlParams = new URLSearchParams(window.location.search);
@@ -59,10 +41,19 @@
             const intimacy = urlParams.get("intimacy");
             const knownTime = urlParams.get("known_time");
 
+            console.log("Username:", username);
+            console.log("Social:", social);
+            console.log("Intimacy:", intimacy);
+            console.log("Known Time:", knownTime);
+
             if (!username || !social || !intimacy || !knownTime) {
                 alert("Invalid questionnaire link.");
-                return;
+                window.location.href = "index.html";
             }
+            document.getElementById("username").textContent = username;
+            document.getElementById("social").textContent = social;
+            document.getElementById("intimacy").textContent = intimacy;
+            document.getElementById("known-time").textContent = knownTime;
 
             const data = {
                 username: username,
@@ -76,8 +67,9 @@
                 timestamp: new Date().toISOString()
             };
 
+            console.log("Data:", data);
+
             try {
-                // Save data to Firebase Realtime Database
                 const dbRef = ref(database, "responses");
                 await push(dbRef, data);
                 alert("Thank you for submitting your response!");
