@@ -5,13 +5,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MBTI Questionnaire</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
     <h1>MBTI Questionnaire for <span id="username"></span></h1>
-    <p>Social Type: <span id="social"></span></p>
+    <!-- <p>Social Type: <span id="social"></span></p>
     <p>Intimacy: <span id="intimacy"></span></p>
-    <p>Known Time: <span id="known-time"></span></p>
+    <p>Known Time: <span id="known-time"></span></p> -->
 
     <form id="questionnaire-form" onsubmit="submitQuestionnaire(event)">
         <label for="ie">I/E Percentage:</label>
@@ -65,15 +66,15 @@
 
             console.log("URL Parameters:", { username, social, intimacy, knownTime });
 
-            if (!username || !social || !intimacy || !knownTime) {
-                alert("Invalid questionnaire link. Redirecting to login page.");
-                window.location.href = "index.html";
-            } else {
-                document.getElementById("username").textContent = username;
-                document.getElementById("social").textContent = social;
-                document.getElementById("intimacy").textContent = intimacy;
-                document.getElementById("known-time").textContent = knownTime;
-            }
+            // if (!username || !social || !intimacy || !knownTime) {
+            //     alert("Invalid questionnaire link. Redirecting to login page.");
+            //     window.location.href = "index.html";
+            // } else {
+            document.getElementById("username").textContent = username;
+            //     document.getElementById("social").textContent = social;
+            //     document.getElementById("intimacy").textContent = intimacy;
+            //     document.getElementById("known-time").textContent = knownTime;
+            // }
 
             // Form submission handler
             document.getElementById("questionnaire-form").addEventListener("submit", async (event) => {
