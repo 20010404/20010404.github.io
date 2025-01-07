@@ -5,11 +5,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MBTI Study Login</title>
+    <script>
+        function login(event) {
+            event.preventDefault();
+            const username = document.getElementById("username").value.trim();
+
+            if (username) {
+                // 跳转到二维码生成页面，并传递用户名作为参数
+                window.location.href = `dashboard.html?username=${encodeURIComponent(username)}`;
+            } else {
+                alert("Please enter a username.");
+            }
+        }
+    </script>
 </head>
 
 <body>
     <h1>MBTI User Study Login</h1>
-    <form action="/dashboard" method="POST">
+    <form onsubmit="login(event)">
         <label for="username">Enter Username:</label>
         <input type="text" id="username" name="username" required>
         <button type="submit">Login</button>

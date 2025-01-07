@@ -4,43 +4,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MBTI Study Dashboard</title>
+    <title>MBTI QR Code Generator</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // 获取用户名参数
+            const urlParams = new URLSearchParams(window.location.search);
+            const username = urlParams.get("username");
+
+            if (username) {
+                document.getElementById("username").textContent = username;
+            } else {
+                alert("Username is missing!");
+                window.location.href = "index.html"; // 回到登录页面
+                return;
+            }
+
+            const form = document.getElementById("qr-form");
+            form.addEventListener("submit", (event) => {
+                event.preventDefault();
+
+                // 获取用户选择的分类信息
+                const social = document.getElementById("social").value;
+                const intimacy = document.getElementById("intimacy").value;
+                const knownTime = document.getElementById("known-time").value;
+
+                // 生成问卷链接
+                const questionnaireUrl = `questionnaire.html?username=${encodeURIComponent(username)}&social=${encodeURIComponent(social)}&intimacy=${encodeURIComponent(intimacy)}&known_time=${encodeURIComponent(knownTime)}`;
+
+                // 显示问卷链接
+                const linkElement = document.getElementById("questionnaire-link");
+                linkElement.textContent = questionnaireUrl;
+                linkElement.href = questionnaireUrl;
+
+                // 生成二维码
+                const qrCodeContainer = document.getElementById("qr-code");
+                qrCodeContainer.innerHTML = ""; // 清空已有二维码
+                QRCode.toCanvas(qrCodeContainer, questionnaireUrl, (error) => {
+                    if (error) console.error(error);
+                });
+            });
+        });
+    </script>
 </head>
 
 <body>
-    <h1>Welcome, {{ username }}!</h1>
-    <form id="generateForm" action="/generate_qr" method="POST">
+    <h1>Welcome, <span id="username"></span>!</h1>
+    <p>Please select the following categories and generate your QR code:</p>
+
+    <!-- 分类表单 -->
+    <form id="qr-form">
         <label for="social">Social Types:</label>
-        <select id="social" name="social">
+        <select id="social" required>
             <option value="Family">Family</option>
             <option value="Friends">Friends</option>
             <option value="Labmates">Labmates</option>
             <option value="Teachers">Teachers</option>
             <option value="Romance">Romance</option>
             <option value="Other">Other</option>
-        </select>
+        </select><br>
 
         <label for="intimacy">Intimacy:</label>
-        <select id="intimacy" name="intimacy">
+        <select id="intimacy" required>
             <option value="High">High</option>
             <option value="Medium">Medium</option>
             <option value="Low">Low</option>
-        </select>
+        </select><br>
 
-        <label for="known_time">Known Time:</label>
-        <select id="known_time" name="known_time">
+        <label for="known-time">Known Time:</label>
+        <select id="known-time" required>
             <option value="Days">Days</option>
             <option value="Months">Months</option>
             <option value="Years">Years</option>
-        </select>
+        </select><br>
 
         <button type="submit">Generate QR Code</button>
     </form>
 
-    <div id="qrCodeSection">
-        <h2>Your QR Code:</h2>
-        <img id="qrCodeImage" src="{{ qr_code_url }}" alt="QR Code">
-    </div>
+    <!-- 显示问卷链接 -->
+    <p>Your questionnaire link:</p>
+    <a id="questionnaire-link" href="#" target="_blank"></a>
+
+    <!-- 二维码容器 -->
+    <canvas id="qr-code"></canvas>
 </body>
 
 </html>

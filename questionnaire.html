@@ -5,13 +5,64 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MBTI Questionnaire</title>
-    <script defer src="questionnaire.js"></script>
+    <script>
+        async function submitQuestionnaire(event) {
+            event.preventDefault();
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const username = urlParams.get("username");
+            const social = urlParams.get("social");
+            const intimacy = urlParams.get("intimacy");
+            const knownTime = urlParams.get("known_time");
+
+            if (!username || !social || !intimacy || !knownTime) {
+                alert("Invalid questionnaire link.");
+                return;
+            }
+
+            // 获取用户填写的问卷数据
+            const data = {
+                username: username,
+                social: social,
+                intimacy: intimacy,
+                known_time: knownTime,
+                ie: document.getElementById("ie").value,
+                ns: document.getElementById("ns").value,
+                ft: document.getElementById("ft").value,
+                jp: document.getElementById("jp").value,
+            };
+
+            try {
+                // 发送数据到 Google Sheets
+                const response = await fetch("https://script.google.com/macros/s/AKfycbzx3aotGNkpZN1LblqgbgKyvMU8J99jbm-OCFU4RpSM6XvJgGib7uQ7OnDBI7hSuBDU/exec", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(data),
+                });
+
+                if (response.ok) {
+                    alert("Thank you for submitting your response!");
+                    document.getElementById("questionnaire-form").reset();
+                } else {
+                    throw new Error("Failed to submit response.");
+                }
+            } catch (error) {
+                console.error(error);
+                alert("An error occurred while submitting the questionnaire.");
+            }
+        }
+    </script>
 </head>
 
 <body>
-    <h1>Answer the MBTI Questionnaire</h1>
-    <p id="info"></p>
-    <form id="questionnaire-form">
+    <h1>MBTI Questionnaire for <span id="username"></span></h1>
+    <p>Social Type: <span id="social"></span></p>
+    <p>Intimacy: <span id="intimacy"></span></p>
+    <p>Known Time: <span id="known-time"></span></p>
+
+    <form id="questionnaire-form" onsubmit="submitQuestionnaire(event)">
         <label for="ie">I/E Percentage:</label>
         <input type="text" id="ie" name="ie" placeholder="e.g., 70%E" required><br>
 
@@ -26,7 +77,6 @@
 
         <button type="submit">Submit</button>
     </form>
-    <p id="response-message"></p>
 </body>
 
 </html>
