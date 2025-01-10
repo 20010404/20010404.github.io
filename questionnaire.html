@@ -5,29 +5,61 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MBTI Questionnaire</title>
+    <script src="switch_language.js" defer></script>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <h1>MBTI Questionnaire for <span id="username"></span></h1>
+
+    <div class="language-switcher">
+        <label for="language">Language: </label>
+        <select id="language" onchange="changeLanguage()">
+            <option value="en">English</option>
+            <option value="zh">中文</option>
+            <option value="ko">한국어</option>
+        </select>
+    </div>
+
+    <h1 id="form-title">MBTI Questionnaire for <span id="username"></span></h1>
+    <p id="introduction">This is a MBTI perception form; you can answer how you perceive him/her in 4 different aspects
+        in real life and interactions:)</p>
     <!-- <p>Social Type: <span id="social"></span></p>
     <p>Intimacy: <span id="intimacy"></span></p>
     <p>Known Time: <span id="known-time"></span></p> -->
 
     <form id="questionnaire-form" onsubmit="submitQuestionnaire(event)">
-        <label for="ie">I/E Percentage:</label>
-        <input type="text" id="ie" name="ie" placeholder="e.g., 70%E" required><br>
+        <div class="form-row">
+            <label for="ie" id="label-ie">I/E Percentage:</label>
+            <span class="tooltip">?
+                <span class="tooltip-text" id="tooltip-ie">I: Introversion, E: Extraversion</span>
+            </span>
+            <input type="text" id="ie" name="ie" placeholder="e.g., 70%E" required>
+        </div>
 
-        <label for="ns">N/S Percentage:</label>
-        <input type="text" id="ns" name="ns" placeholder="e.g., 60%N" required><br>
+        <div class="form-row">
+            <label for="ns" id="label-ns">N/S Percentage:</label>
+            <span class="tooltip">?
+                <span class="tooltip-text" id="tooltip-ns">N: Intuition, S: Sensing</span>
+            </span>
+            <input type="text" id="ns" name="ns" placeholder="e.g., 60%N" required>
+        </div>
 
-        <label for="ft">F/T Percentage:</label>
-        <input type="text" id="ft" name="ft" placeholder="e.g., 80%T" required><br>
+        <div class="form-row">
+            <label for="ft" id="label-ft">F/T Percentage:</label>
+            <span class="tooltip">?
+                <span class="tooltip-text" id="tooltip-ft">F: Feeling, T: Thinking</span>
+            </span>
+            <input type="text" id="ft" name="ft" placeholder="e.g., 80%T" required>
+        </div>
 
-        <label for="jp">J/P Percentage:</label>
-        <input type="text" id="jp" name="jp" placeholder="e.g., 50%J" required><br>
-
-        <button type="submit">Submit</button>
+        <div class="form-row">
+            <label for="jp" id="label-jp">J/P Percentage:</label>
+            <span class="tooltip">?
+                <span class="tooltip-text" id="tooltip-jp">J: Judging, P: Perceiving</span>
+            </span>
+            <input type="text" id="jp" name="jp" placeholder="e.g., 50%J" required>
+        </div>
+        <button type="submit" id="submit-button">Submit</button>
     </form>
 
     <script type="module">
@@ -35,7 +67,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-analytics.js";
         import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
-
         document.addEventListener("DOMContentLoaded", () => {
             console.log("Initializing page...");
             // Firebase configuration
@@ -62,9 +93,9 @@
             const username = urlParams.get("username");
             const social = urlParams.get("social");
             const intimacy = urlParams.get("intimacy");
-            const knownTime = urlParams.get("known_time");
+            const mostInteractinPlace = urlParams.get("mostInteractionPlace");
 
-            console.log("URL Parameters:", { username, social, intimacy, knownTime });
+            console.log("URL Parameters:", { username, social, intimacy, mostInteractinPlace });
 
             // if (!username || !social || !intimacy || !knownTime) {
             //     alert("Invalid questionnaire link. Redirecting to login page.");
@@ -79,12 +110,11 @@
             // Form submission handler
             document.getElementById("questionnaire-form").addEventListener("submit", async (event) => {
                 event.preventDefault();
-
                 const data = {
                     username: username,
                     social: social,
                     intimacy: intimacy,
-                    known_time: knownTime,
+                    mostInteractinPlace: mostInteractinPlace,
                     ie: document.getElementById("ie").value,
                     ns: document.getElementById("ns").value,
                     ft: document.getElementById("ft").value,

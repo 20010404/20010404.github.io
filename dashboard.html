@@ -28,10 +28,10 @@
                 // 获取用户选择的分类信息
                 const social = document.getElementById("social").value;
                 const intimacy = document.getElementById("intimacy").value;
-                const knownTime = document.getElementById("known-time").value;
+                const MostInteractinPlace = document.getElementById("most-interaction-place-in-1-month").value;
 
                 // 生成问卷链接
-                const questionnaireUrl = `questionnaire.html?username=${encodeURIComponent(username)}&social=${encodeURIComponent(social)}&intimacy=${encodeURIComponent(intimacy)}&known_time=${encodeURIComponent(knownTime)}`;
+                const questionnaireUrl = `questionnaire.html?username=${encodeURIComponent(username)}&social=${encodeURIComponent(social)}&intimacy=${encodeURIComponent(intimacy)}&mostInteractionPlace=${encodeURIComponent(MostInteractinPlace)}`;
 
                 // 显示问卷链接
                 const linkElement = document.getElementById("questionnaire-link");
@@ -39,11 +39,11 @@
                 linkElement.href = questionnaireUrl;
 
                 // 生成二维码
-                const qrCodeContainer = document.getElementById("qr-code");
-                qrCodeContainer.innerHTML = ""; // 清空已有二维码
-                QRCode.toCanvas(qrCodeContainer, questionnaireUrl, (error) => {
-                    if (error) console.error(error);
-                });
+                // const qrCodeContainer = document.getElementById("qr-code");
+                // qrCodeContainer.innerHTML = ""; // 清空已有二维码
+                // QRCode.toCanvas(qrCodeContainer, questionnaireUrl, (error) => {
+                //     if (error) console.error(error);
+                // });
             });
         });
     </script>
@@ -67,27 +67,27 @@
 
         <label for="intimacy">Intimacy:</label>
         <select id="intimacy" required>
-            <option value="High">High</option>
+            <option value="High">Very close</option>
             <option value="Medium">Medium</option>
-            <option value="Low">Low</option>
+            <option value="Low">Not so close</option>
         </select><br>
 
-        <label for="known-time">Known Time:</label>
-        <select id="known-time" required>
-            <option value="Days">Days</option>
-            <option value="Months">Months</option>
-            <option value="Years">Years</option>
+        <label for="most-interaction-place-in-1-month">Most interaction place(1 month):</label>
+        <select id="most-interaction-place-in-1-month" required>
+            <option value="Home">Home</option>
+            <option value="Internet">Internet</option>
+            <option value="Library">Library</option>
+            <option value="Cafe">Cafe</option>
+            <option value="Lab">Lab</option>
+            <option value="Sports_place">Sports place</option>
+            <option value="Other">Other</option>
         </select><br>
 
-        <button type="submit">Generate QR Code</button>
+        <button type="submit">Generate Link</button>
     </form>
 
     <!-- 显示问卷链接 -->
-    <p>Your questionnaire link:</p>
-    <a id="questionnaire-link" href="#" target="_blank"></a>
-
-    <!-- 二维码容器 -->
-    <canvas id="qr-code"></canvas>
+    <p><a id="questionnaire-link" href="#" target="_blank" /a></p>
 </body>
 
 </html>

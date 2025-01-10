@@ -34,7 +34,7 @@ form {
     display: flex;
     flex-direction: column;
     align-items: center;
-    width: 300px;
+    width: 400px;
     font-family: 'Roboto', serif;
     text-align: center;
 }
@@ -57,8 +57,10 @@ label {
     font-size: 16px;
     color: #2e8b57;
     margin-bottom: 10px;
+    display: inline-block;
     font-family: 'Roboto', serif;
 }
+
 
 option {
     font-family: 'Roboto', serif;
@@ -67,12 +69,15 @@ option {
 
 input[type="text"] {
     width: 100%;
+    display: block;
+    flex: 1;
     padding: 10px;
     margin-bottom: 20px;
     border: 1px solid #2e8b57;
     border-radius: 5px;
     font-size: 14px;
 }
+
 
 button {
     background-color: #7adeb2;
@@ -91,4 +96,67 @@ button:hover {
 
 button:focus {
     outline: none;
+}
+
+.tooltip {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    text-align: center;
+    font-size: 14px;
+    color: #333;
+    border: 2px solid #2e8b57;
+    border-radius: 50%;
+    margin-left: 5px;
+    margin-right: 15px;
+    /* Adds space between the tooltip and input box */
+    cursor: pointer;
+    font-weight: bold;
+    background-color: #fff;
+    position: relative;
+}
+
+.tooltip .tooltip-text {
+    visibility: hidden;
+    width: 200px;
+    background-color: rgba(255, 255, 255, 0.9);
+    color: #333;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px;
+    border: 1px solid #ddd;
+    position: absolute;
+    top: 50%;
+    left: 110%;
+    transform: translateY(-50%);
+    z-index: 1;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.tooltip:hover .tooltip-text {
+    visibility: visible;
+}
+
+.form-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.form-row label {
+    margin-right: 10px;
+}
+
+.language-switcher {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+}
+
+.language-switcher select {
+    padding: 5px;
+    border: 1px solid #7adeb2;
+    border-radius: 4px;
+    cursor: pointer;
 }
