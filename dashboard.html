@@ -31,19 +31,12 @@
                 const MostInteractinPlace = document.getElementById("most-interaction-place-in-1-month").value;
 
                 // 生成问卷链接
-                const questionnaireUrl = `questionnaire.html?username=${encodeURIComponent(username)}&social=${encodeURIComponent(social)}&intimacy=${encodeURIComponent(intimacy)}&mostInteractionPlace=${encodeURIComponent(MostInteractinPlace)}`;
+                const questionnaireUrl = `https://20010404.github.io/questionnaire.html?username=${encodeURIComponent(username)}&social=${encodeURIComponent(social)}&intimacy=${encodeURIComponent(intimacy)}&mostInteractionPlace=${encodeURIComponent(MostInteractinPlace)}`;
 
                 // 显示问卷链接
                 const linkElement = document.getElementById("questionnaire-link");
-                linkElement.textContent = questionnaireUrl;
+                linkElement.textContent = "Link here";
                 linkElement.href = questionnaireUrl;
-
-                // 生成二维码
-                // const qrCodeContainer = document.getElementById("qr-code");
-                // qrCodeContainer.innerHTML = ""; // 清空已有二维码
-                // QRCode.toCanvas(qrCodeContainer, questionnaireUrl, (error) => {
-                //     if (error) console.error(error);
-                // });
             });
         });
     </script>
