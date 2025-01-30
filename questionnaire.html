@@ -129,6 +129,7 @@
                     console.log("Data saved successfully to Firebase:", data);
                     alert("Thank you for submitting your response!");
                     document.getElementById("questionnaire-form").reset();
+                    window.close();
                 } catch (error) {
                     console.error("Error saving data to Firebase:", error);
                     alert("An error occurred while saving the questionnaire.");

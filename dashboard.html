@@ -33,10 +33,16 @@
                 // 生成问卷链接
                 const questionnaireUrl = `https://20010404.github.io/questionnaire.html?username=${encodeURIComponent(username)}&social=${encodeURIComponent(social)}&intimacy=${encodeURIComponent(intimacy)}&mostInteractionPlace=${encodeURIComponent(MostInteractinPlace)}`;
 
-                // 显示问卷链接
-                const linkElement = document.getElementById("questionnaire-link");
-                linkElement.textContent = "Link here";
-                linkElement.href = questionnaireUrl;
+                // 显示复制链接按钮
+                const copyButton = document.getElementById("copy-link-button");
+                copyButton.style.display = "inline-block";
+                copyButton.onclick = () => {
+                    navigator.clipboard.writeText(questionnaireUrl).then(() => {
+                        alert("Link copied to clipboard!");
+                    }).catch(() => {
+                        alert("Failed to copy link.");
+                    });
+                };
             });
         });
     </script>
@@ -78,9 +84,9 @@
 
         <button type="submit">Generate Link</button>
     </form>
-
-    <!-- 显示问卷链接 -->
-    <p><a id="questionnaire-link" href="#" target="_blank" /a></p>
+    <p> </p>
+    <!-- 复制链接按钮 -->
+    <button id="copy-link-button" style="display: none;">Copy Link</button>
 </body>
 
 </html>
