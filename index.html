@@ -33,13 +33,13 @@
                 return;
             }
             const baseUrl = window.location.hostname === '127.0.0.1' ?
-                'http://127.0.0.1:5500/' :
+                'http://127.0.0.1:5500' :
                 window.location.origin;  // 如果是 GitHub Pages，使用其基础 URL
 
             // 生成用户专属的问卷链接
 
             // 为每个用户生成独一无二的链接
-            const questionnaireUrl = `${baseUrl}questionnaire.html?username=${encodeURIComponent(username)}`;
+            const questionnaireUrl = `${baseUrl}/questionnaire.html?username=${encodeURIComponent(username)}`;
 
             // 创建一个临时的输入元素来存储链接
             const tempInput = document.createElement('input');
