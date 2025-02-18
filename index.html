@@ -4,30 +4,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MBTI Study Login</title>
+    <title>MBTI Questionnaire Link</title>
+    <script src="switch_language.js" defer></script>
     <link rel="stylesheet" href="style.css">
-    <script>
-        function login(event) {
-            event.preventDefault();
-            const username = document.getElementById("username").value.trim();
-
-            if (username) {
-                // 跳转到二维码生成页面，并传递用户名作为参数
-                window.location.href = `dashboard.html?username=${encodeURIComponent(username)}`;
-            } else {
-                alert("Please enter a username.");
-            }
-        }
-    </script>
 </head>
 
 <body>
-    <h1>MBTI User Study Login</h1>
-    <form onsubmit="login(event)">
-        <label for="username">Enter Username:</label>
-        <input type="text" id="username" name="username" required>
-        <button type="submit">Login</button>
-    </form>
+
+    <h1>MBTI Questionnaire Link</h1>
+    <p id="description">Click the button below to copy your unique questionnaire link.</p>
+
+    <div class="form-row">
+        <label for="username">Enter your username:</label>
+        <input type="text" id="username" name="username" placeholder="Your unique username" required>
+    </div>
+
+    <button id="copy-btn">
+        Copy Link
+    </button>
+
+    <script>
+        document.getElementById('copy-btn').addEventListener('click', () => {
+            // 获取用户输入的用户名
+            const username = document.getElementById('username').value.trim();
+
+            if (username === "") {
+                alert("Please enter a username.");
+                return;
+            }
+            const baseUrl = window.location.hostname === '127.0.0.1' ?
+                'http://127.0.0.1:5500/' :
+                window.location.origin;  // 如果是 GitHub Pages，使用其基础 URL
+
+            // 生成用户专属的问卷链接
+
+            // 为每个用户生成独一无二的链接
+            const questionnaireUrl = `${baseUrl}questionnaire.html?username=${encodeURIComponent(username)}`;
+
+            // 创建一个临时的输入元素来存储链接
+            const tempInput = document.createElement('input');
+            tempInput.value = questionnaireUrl;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy'); // 执行复制操作
+            document.body.removeChild(tempInput); // 移除临时输入框
+
+            // 提示用户链接已复制
+            alert(`The questionnaire link has been copied!`);
+        });
+    </script>
+
 </body>
 
 </html>

@@ -2,6 +2,7 @@ const translations = {
     en: {
         title: "MBTI Questionnaire",
         introduction: "This is a MBTI perception form; you can answer how you perceive him/her in 4 different aspects in real life and interactions:)",
+        email: "Your email:",
         ie: "I/E Percentage:",
         ieTooltip: "I: Introversion, E: Extraversion",
         ns: "N/S Percentage:",
@@ -15,6 +16,7 @@ const translations = {
     zh: {
         title: "MBTI问卷",
         introduction: "这是MBTI感知表，你可以从四个不同方面回答你在现实生活和交往中对他/她的看法：)",
+        email: "您的邮箱:",
         ie: "I/E 百分比:",
         ieTooltip: "I: 内向, E: 外向",
         ns: "N/S 百分比:",
@@ -28,6 +30,7 @@ const translations = {
     ko: {
         title: "MBTI 설문지",
         introduction: "이것은 MBTI 인식 유형입니다. 실제 생활과 상호작용에서 그/그녀를 4가지 측면에서 어떻게 인식하는지 답할 수 있습니다:)",
+        email: "당신의 이메일:",
         ie: "I/E 백분율:",
         ieTooltip: "I: 내향성, E: 외향성",
         ns: "N/S 백분율:",
@@ -46,6 +49,7 @@ function changeLanguage() {
 
     document.getElementById("form-title").textContent = translation.title;
     document.getElementById("introduction").textContent = translation.introduction;
+    document.getElementById("label-email").textContent = translation.email;
     document.getElementById("label-ie").textContent = translation.ie;
     document.getElementById("tooltip-ie").textContent = translation.ieTooltip;
     document.getElementById("label-ns").textContent = translation.ns;

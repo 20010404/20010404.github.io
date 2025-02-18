@@ -10,7 +10,6 @@
 </head>
 
 <body>
-
     <div class="language-switcher">
         <label for="language">Language: </label>
         <select id="language" onchange="changeLanguage()">
@@ -21,13 +20,15 @@
     </div>
 
     <h1 id="form-title">MBTI Questionnaire for <span id="username"></span></h1>
-    <p id="introduction">This is a MBTI perception form; you can answer how you perceive him/her in 4 different aspects
+    <p id="introduction">This is an MBTI perception form; you can answer how you perceive him/her in 4 different aspects
         in real life and interactions:)</p>
-    <!-- <p>Social Type: <span id="social"></span></p>
-    <p>Intimacy: <span id="intimacy"></span></p>
-    <p>Known Time: <span id="known-time"></span></p> -->
 
     <form id="questionnaire-form" onsubmit="submitQuestionnaire(event)">
+        <div class="form-row">
+            <label for="email" id="label-email">Your email:</label>
+            <input type="text" id="email" name="email" placeholder="a.com " required>
+        </div>
+
         <div class="form-row">
             <label for="ie" id="label-ie">I/E Percentage:</label>
             <span class="tooltip">?
@@ -62,80 +63,46 @@
         <button type="submit" id="submit-button">Submit</button>
     </form>
 
-    <script type="module">
-        // 页面加载后初始化内容
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-analytics.js";
-        import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+    <script>
         document.addEventListener("DOMContentLoaded", () => {
-            console.log("Initializing page...");
-            // Firebase configuration
-            const firebaseConfig = {
-                apiKey: "AIzaSyCvc9C5PuDqrI26jrmsg5b1PVOW6_k43W4",
-                authDomain: "mbti-kale.firebaseapp.com",
-                databaseURL: "https://mbti-kale-default-rtdb.asia-southeast1.firebasedatabase.app",
-                projectId: "mbti-kale",
-                storageBucket: "mbti-kale.firebasestorage.app",
-                messagingSenderId: "756176954275",
-                appId: "1:756176954275:web:7581e5e485e426b33ff016",
-                measurementId: "G-B6F0F4JZ7E"
-            };
-
-            // Initialize Firebase
-            const app = initializeApp(firebaseConfig);
-            const analytics = getAnalytics(app);
-
-            // Initialize Firebase Realtime Database
-            const database = getDatabase(app);
-
-            // Handle URL parameters
             const urlParams = new URLSearchParams(window.location.search);
             const username = urlParams.get("username");
-            const social = urlParams.get("social");
-            const intimacy = urlParams.get("intimacy");
-            const mostInteractinPlace = urlParams.get("mostInteractionPlace");
+            const email = urlParams.get("email");
+            const ie = urlParams.get("ie");
+            const ns = urlParams.get("ns");
+            const ft = urlParams.get("ft");
+            const jp = urlParams.get("jp");
 
-            console.log("URL Parameters:", { username, social, intimacy, mostInteractinPlace });
+            if (username) {
+                document.getElementById("username").textContent = username;
+            } else {
+                alert("Username is missing!");
+                window.location.href = "index.html";
+                return;
+            }
 
-            // if (!username || !social || !intimacy || !knownTime) {
-            //     alert("Invalid questionnaire link. Redirecting to login page.");
-            //     window.location.href = "index.html";
-            // } else {
-            document.getElementById("username").textContent = username;
-            //     document.getElementById("social").textContent = social;
-            //     document.getElementById("intimacy").textContent = intimacy;
-            //     document.getElementById("known-time").textContent = knownTime;
-            // }
-
-            // Form submission handler
-            document.getElementById("questionnaire-form").addEventListener("submit", async (event) => {
-                event.preventDefault();
-                const data = {
-                    username: username,
-                    social: social,
-                    intimacy: intimacy,
-                    mostInteractinPlace: mostInteractinPlace,
-                    ie: document.getElementById("ie").value,
-                    ns: document.getElementById("ns").value,
-                    ft: document.getElementById("ft").value,
-                    jp: document.getElementById("jp").value,
-                    timestamp: new Date().toISOString()
-                };
-
-                console.log("Collected Data:", data);
-                try {
-                    const dbRef = ref(database, "responses");
-                    await push(dbRef, data);
-                    console.log("Data saved successfully to Firebase:", data);
-                    alert("Thank you for submitting your response!");
-                    document.getElementById("questionnaire-form").reset();
-                    window.close();
-                } catch (error) {
-                    console.error("Error saving data to Firebase:", error);
-                    alert("An error occurred while saving the questionnaire.");
-                }
-            });
+            document.getElementById("email").value = email;
+            document.getElementById("ie").value = ie;
+            document.getElementById("ns").value = ns;
+            document.getElementById("ft").value = ft;
+            document.getElementById("jp").value = jp;
         });
+
+        function submitQuestionnaire(event) {
+            event.preventDefault();
+            const data = {
+                username: document.getElementById("username").textContent,
+                email: document.getElementById("email").value,
+                ie: document.getElementById("ie").value,
+                ns: document.getElementById("ns").value,
+                ft: document.getElementById("ft").value,
+                jp: document.getElementById("jp").value,
+                timestamp: new Date().toISOString()
+            };
+
+            console.log("Collected Data:", data);
+            // You can now save the data or send it to a server, such as Firebase.
+        }
     </script>
 </body>
 
