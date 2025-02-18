@@ -99,7 +99,18 @@
                 jp: document.getElementById("jp").value,
                 timestamp: new Date().toISOString()
             };
-
+            fetch('https://script.google.com/macros/s/AKfycbxeaPlPzp_2dyfmT2tiE0BzKRJfE4hvy1WQnkqQovTAURzRywxNSSjpFS33AyWTOBOK/exec', {  // 替换为您Google Apps Script的Web App URL
+                method: 'POST',
+                body: new URLSearchParams(data),
+            })
+                .then(response => response.text())
+                .then(() => {
+                    alert("Data has been successfully submitted!");
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    alert("There was an error saving the data.");
+                });
             console.log("Collected Data:", data);
             // You can now save the data or send it to a server, such as Firebase.
         }
