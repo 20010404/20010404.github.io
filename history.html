@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Questionnaire History</title>
+    <script src="switch_language.js" defer></script>
+    <link rel="stylesheet" href="style3.css">
+</head>
+
+<body>
+    <h1>My Questionnaire History</h1>
+    <p id="history-description">Here are the records you collect.</p>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Email</th>
+                <th>I/E</th>
+                <th>N/S</th>
+                <th>F/T</th>
+                <th>J/P</th>
+                <th>Timestamp</th>
+                <th>Relationship type</th>
+                <th>Intimacy level</th>
+                <th>Frequent interaction place</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="history-table">
+            <!-- 数据将会动态填充 -->
+        </tbody>
+    </table>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getDatabase, ref, query, orderByChild, equalTo, get, update } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+        // import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-analytics.js";
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            console.log("Loading history...");
+            // Firebase 配置
+            const firebaseConfig = {
+                apiKey: "AIzaSyCvc9C5PuDqrI26jrmsg5b1PVOW6_k43W4",
+                authDomain: "mbti-kale.firebaseapp.com",
+                databaseURL: "https://mbti-kale-default-rtdb.asia-southeast1.firebasedatabase.app",
+                projectId: "mbti-kale",
+                storageBucket: "mbti-kale.firebasestorage.app",
+                messagingSenderId: "756176954275",
+                appId: "1:756176954275:web:7581e5e485e426b33ff016",
+                measurementId: "G-B6F0F4JZ7E"
+            };
+
+            // 初始化 Firebase
+            const app = initializeApp(firebaseConfig);
+            const database = getDatabase(app);
+            // const analytics = getAnalytics(app);
+
+            // 获取 URL 参数中的 username
+            const urlParams = new URLSearchParams(window.location.search);
+            const username = urlParams.get("username");
+
+            if (!username) {
+                alert("Invalid access. No username provided.");
+                window.location.href = "index.html";
+                return;
+            }
+            console.log("Fetching data for username:", username);
+            try {
+                const dbRef = ref(database, "responses");
+                const q = query(dbRef, orderByChild("username"), equalTo(username));
+                const snapshot = await get(q);
+
+                if (snapshot.exists()) {
+                    console.log("Data found:", snapshot.val());
+                    const tableBody = document.getElementById("history-table");
+                    let index = 1;
+
+                    snapshot.forEach((childSnapshot) => {
+                        const data = childSnapshot.val();
+                        const recordKey = childSnapshot.key;
+
+                        const row = document.createElement("tr");
+                        row.innerHTML = `
+                            <td>${index}</td>
+                            <td>${data.email}</td>
+                            <td>${data.ie}</td>
+                            <td>${data.ns}</td>
+                            <td>${data.ft}</td>
+                            <td>${data.jp}</td>
+                            <td>${new Date(data.timestamp).toLocaleString()}</td>`;
+                        index++;
+
+                        /** 🔹 Relationship Type **/
+                        const relationshipTd = document.createElement("td");
+                        const relationshipSelect = document.createElement("select");
+                        relationshipSelect.id = "relationship-" + recordKey;
+                        const relationshipInput = document.createElement("input"); // 用户输入框
+                        relationshipInput.id = "relationship-input-" + recordKey;
+                        relationshipInput.style.display = "none";
+
+                        const relOptions = ["", "Friend", "Family", "Colleague", "Other", "Romantic"];
+                        relOptions.forEach(optionText => {
+                            const option = document.createElement("option");
+                            option.value = optionText;
+                            option.text = optionText || "Select...";
+                            if (data.relationshipType === optionText) {
+                                option.selected = true;
+                            }
+                            relationshipSelect.appendChild(option);
+                        });
+
+                        relationshipSelect.addEventListener("change", () => {
+                            if (relationshipSelect.value === "Other") {
+                                relationshipInput.style.display = "block";
+                            } else {
+
+                                relationshipInput.style.display = "none";
+                                relationshipInput.value = "";
+                            }
+                        });
+
+                        relationshipTd.appendChild(relationshipSelect);
+                        relationshipTd.appendChild(relationshipInput);
+                        row.appendChild(relationshipTd);
+
+                        /** 🔹 Intimacy Level **/
+                        const intimacyTd = document.createElement("td");
+                        const intimacySelect = document.createElement("select");
+                        intimacySelect.id = "intimacy-" + recordKey;
+                        ["", "High", "Medium", "Low"].forEach(optionText => {
+                            const option = document.createElement("option");
+                            option.value = optionText;
+                            option.text = optionText || "Select...";
+                            if (data.intimacyLevel === optionText) {
+                                option.selected = true;
+                            }
+                            intimacySelect.appendChild(option);
+                        });
+                        intimacyTd.appendChild(intimacySelect);
+                        row.appendChild(intimacyTd);
+
+                        /** 🔹 Frequent Interaction Place **/
+                        const interactionTd = document.createElement("td");
+                        const interactionSelect = document.createElement("select");
+                        interactionSelect.id = "interaction-" + recordKey;
+                        ["", "Online", "Work", "School", "Home", "Cafe", "Sports", "Other"].forEach(optionText => {
+                            const option = document.createElement("option");
+                            option.value = optionText;
+                            option.text = optionText || "Select...";
+                            if (data.interactionPlace === optionText) {
+                                option.selected = true;
+                            }
+                            interactionSelect.appendChild(option);
+                        });
+
+                        const interactionInput = document.createElement("input"); // 用户输入框
+                        interactionInput.id = "interaction-input-" + recordKey;
+                        interactionInput.style.display = "none";
+
+                        interactionSelect.addEventListener("change", () => {
+                            if (interactionSelect.value === "Other") {
+                                interactionInput.style.display = "block";
+                            } else {
+                                interactionInput.style.display = "none";
+                                interactionInput.value = "";
+                            }
+                        });
+
+                        interactionTd.appendChild(interactionSelect);
+                        interactionTd.appendChild(interactionInput);
+                        row.appendChild(interactionTd);
+
+                        /** 🔹 Save Button **/
+                        const actionTd = document.createElement("td");
+                        const saveButton = document.createElement("button");
+                        saveButton.textContent = "Save";
+
+                        saveButton.addEventListener("click", async () => {
+                            const newRelationship = relationshipSelect.value === "Other" ? relationshipInput.value : relationshipSelect.value;
+                            const newIntimacy = intimacySelect.value;
+                            const newInteraction = interactionSelect.value === "Other" ? interactionInput.value : interactionSelect.value;
+
+                            const updatedData = {
+                                relationshipType: newRelationship,
+                                intimacyLevel: newIntimacy,
+                                interactionPlace: newInteraction
+                            };
+
+                            try {
+                                await update(ref(database, "responses/" + recordKey), updatedData);
+                                alert("Record updated successfully!");
+
+                                // 🔹 替换 `select` 为文本
+                                relationshipTd.innerHTML = `<span>${newRelationship || "N/A"}</span>`;
+                                intimacyTd.innerHTML = `<span>${newIntimacy || "N/A"}</span>`;
+                                interactionTd.innerHTML = `<span>${newInteraction || "N/A"}</span>`;
+                                saveButton.style.display = "none";
+                            } catch (error) {
+                                console.error("Update error:", error);
+                                alert("Failed to update record: " + error.message);
+                            }
+                        });
+
+                        actionTd.appendChild(saveButton);
+                        row.appendChild(actionTd);
+
+                        tableBody.appendChild(row);
+                    });
+                } else {
+                    console.log("No records found.");
+                    document.getElementById("history-description").textContent = "No history found for this user.";
+                }
+            } catch (error) {
+
+            }
+        });
+    </script>
+</body>
+
+</html>

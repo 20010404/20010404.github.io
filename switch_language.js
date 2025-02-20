@@ -1,8 +1,8 @@
 const translations = {
     en: {
-        title: "MBTI Questionnaire",
-        introduction: "This is a MBTI perception form; you can answer how you perceive him/her in 4 different aspects in real life and interactions:)",
-        email: "Your email:",
+        title: "MBTI Questionnaire  - ",
+        introduction: "This is an MBTI perception form; you can answer how you perceive him/her in 4 different aspects according to real-life interactions.",
+        email: "Your email or nickname:",
         ie: "I/E Percentage:",
         ieTooltip: "I: Introversion, E: Extraversion",
         ns: "N/S Percentage:",
@@ -14,40 +14,52 @@ const translations = {
         submit: "Submit"
     },
     zh: {
-        title: "MBTI问卷",
-        introduction: "这是MBTI感知表，你可以从四个不同方面回答你在现实生活和交往中对他/她的看法：)",
-        email: "您的邮箱:",
-        ie: "I/E 百分比:",
+        title: "MBTI问卷 -",
+        introduction: "这是一个 MBTI 感知表单，您可以根据现实生活中的互动，回答您对他/她的 4 个方面的看法。",
+        email: "您的邮箱或昵称：",
+        ie: "I/E 百分比：",
         ieTooltip: "I: 内向, E: 外向",
-        ns: "N/S 百分比:",
-        nsTooltip: "N: 直觉, S: 感觉",
-        ft: "F/T 百分比:",
-        ftTooltip: "F: 情感, T: 思考",
-        jp: "J/P 百分比:",
-        jpTooltip: "J: 判断, P: 知觉",
+        ns: "N/S 百分比：",
+        nsTooltip: "N: 直觉, S: 现实",
+        ft: "F/T 百分比：",
+        ftTooltip: "F: 感性, T: 理性",
+        jp: "J/P 百分比：",
+        jpTooltip: "J: 判断, P: 感知",
         submit: "提交"
     },
     ko: {
-        title: "MBTI 설문지",
-        introduction: "이것은 MBTI 인식 유형입니다. 실제 생활과 상호작용에서 그/그녀를 4가지 측면에서 어떻게 인식하는지 답할 수 있습니다:)",
-        email: "당신의 이메일:",
-        ie: "I/E 백분율:",
-        ieTooltip: "I: 내향성, E: 외향성",
-        ns: "N/S 백분율:",
+        title: "MBTI 설문지 -",
+        introduction: "이것은 MBTI 인식 설문지입니다. 실제 생활 상호작용을 기반으로 그/그녀를 어떻게 인식하는지 4가지 측면에서 답변할 수 있습니다.",
+        email: "이메일 또는 닉네임:",
+        ie: "I/E 퍼센트:",
+        ieTooltip: "I: 내향, E: 외향",
+        ns: "N/S 퍼센트:",
         nsTooltip: "N: 직관, S: 감각",
-        ft: "F/T 백분율:",
+        ft: "F/T 퍼센트:",
         ftTooltip: "F: 감정, T: 사고",
-        jp: "J/P 백분율:",
+        jp: "J/P 퍼센트:",
         jpTooltip: "J: 판단, P: 인식",
         submit: "제출"
     }
 };
+function changeLanguage(lang) {
+    console.log("Applying language:", lang);
 
-function changeLanguage() {
-    const language = document.getElementById("language").value;
-    const translation = translations[language];
+    if (!translations[lang]) {
+        console.error("Language translation not found for:", lang);
+        return;
+    }
 
-    document.getElementById("form-title").textContent = translation.title;
+    const translation = translations[lang];
+
+    // **存储用户语言偏好**
+    localStorage.setItem("selectedLanguage", lang);
+
+    // **✅ 只更新 "MBTI Questionnaire for"，不修改 username**
+    const username = document.getElementById("username").textContent;
+    document.getElementById("form-title").innerHTML = `${translation.title} <span id="username">${username}</span>`;
+
+    // **更新其他内容**
     document.getElementById("introduction").textContent = translation.introduction;
     document.getElementById("label-email").textContent = translation.email;
     document.getElementById("label-ie").textContent = translation.ie;
