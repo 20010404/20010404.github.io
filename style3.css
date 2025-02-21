@@ -1,5 +1,5 @@
 body {
-    font-family: "Roboto", sans-serif;
+    font-family: "Poppins", sans-serif;
     background-color: #f4f8f7;
     margin: 0;
     padding: 40px;
@@ -7,6 +7,40 @@ body {
     flex-direction: column;
     align-items: center;
     /* 让内容从左侧开始 */
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Quicksand:wght@400;600&display=swap');
+
+/* 🔹 美化下拉框的基础样式 */
+select {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    color: #333;
+    background-color: #ffffff;
+    border: 2px solid #b0e0e6;
+    border-radius: 8px;
+    padding: 8px 12px;
+    outline: none;
+    appearance: none;
+    /* 隐藏默认的系统下拉箭头 */
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+/* 🔹 鼠标悬停时 */
+select:hover {
+    border-color: #6fa3ef;
+    background: linear-gradient(135deg, #d5f0ff, #ffffff);
+}
+
+/* 🔹 选中状态 */
+select:focus {
+    border-color: #f496a4;
+    background: linear-gradient(135deg, #ffdee9, #ffffff);
+    box-shadow: 0px 0px 8px rgba(230, 101, 120, 0.5);
 }
 
 .container {
@@ -51,6 +85,46 @@ thead {
     color: white;
     font-weight: bold;
     text-transform: uppercase;
+}
+
+
+/* 🔹 美化 "Other" 输入框 */
+input.custom-input {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    color: #333;
+    background-color: #ffffff;
+    border: 2px solid #b0e0e6;
+    /* 柔和的蓝色边框 */
+    border-radius: 8px;
+    /* 圆角 */
+    padding: 8px 12px;
+    outline: none;
+    transition: all 0.3s ease-in-out;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    display: none;
+    margin-top: 5px;
+    /* 默认隐藏 */
+}
+
+/* 🔹 鼠标悬停时 */
+input.custom-input:hover {
+    border-color: #6fa3ef;
+    background: linear-gradient(135deg, #d5f0ff, #ffffff);
+}
+
+/* 🔹 选中状态 */
+input.custom-input:focus {
+    border-color: #ff6b81;
+    background: linear-gradient(135deg, #ffdee9, #ffffff);
+    box-shadow: 0px 0px 8px rgba(255, 107, 129, 0.5);
+}
+
+/* 🔹 让输入框显示（当 Other 被选中时） */
+select.other-selected+input.custom-input {
+    display: block;
 }
 
 /* 表格单元格 */

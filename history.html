@@ -114,8 +114,8 @@
                         relationshipSelect.addEventListener("change", () => {
                             if (relationshipSelect.value === "Other") {
                                 relationshipInput.style.display = "block";
+                                relationshipInput.classList.add("custom-input");
                             } else {
-
                                 relationshipInput.style.display = "none";
                                 relationshipInput.value = "";
                             }
@@ -162,6 +162,7 @@
                         interactionSelect.addEventListener("change", () => {
                             if (interactionSelect.value === "Other") {
                                 interactionInput.style.display = "block";
+                                interactionInput.classList.add("custom-input");
                             } else {
                                 interactionInput.style.display = "none";
                                 interactionInput.value = "";
