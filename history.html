@@ -36,11 +36,9 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
         import { getDatabase, ref, query, orderByChild, equalTo, get, update } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
-        // import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-analytics.js";
 
         document.addEventListener("DOMContentLoaded", async () => {
             console.log("Loading history...");
-            // Firebase 配置
             const firebaseConfig = {
                 apiKey: "AIzaSyCvc9C5PuDqrI26jrmsg5b1PVOW6_k43W4",
                 authDomain: "mbti-kale.firebaseapp.com",
@@ -52,12 +50,9 @@
                 measurementId: "G-B6F0F4JZ7E"
             };
 
-            // 初始化 Firebase
             const app = initializeApp(firebaseConfig);
             const database = getDatabase(app);
-            // const analytics = getAnalytics(app);
 
-            // 获取 URL 参数中的 username
             const urlParams = new URLSearchParams(window.location.search);
             const username = urlParams.get("username");
 
@@ -66,7 +61,7 @@
                 window.location.href = "index.html";
                 return;
             }
-            console.log("Fetching data for username:", username);
+
             try {
                 const dbRef = ref(database, "responses");
                 const q = query(dbRef, orderByChild("username"), equalTo(username));
@@ -94,127 +89,109 @@
 
                         /** 🔹 Relationship Type **/
                         const relationshipTd = document.createElement("td");
-                        const relationshipSelect = document.createElement("select");
-                        relationshipSelect.id = "relationship-" + recordKey;
-                        const relationshipInput = document.createElement("input"); // 用户输入框
-                        relationshipInput.id = "relationship-input-" + recordKey;
-                        relationshipInput.style.display = "none";
+                        let relationshipSelect, relationshipInput;
+                        if (data.relationshipType) {
+                            relationshipTd.innerHTML = `<span>${data.relationshipType}</span>`;
+                        } else {
+                            relationshipSelect = document.createElement("select");
+                            relationshipInput = document.createElement("input");
+                            relationshipInput.style.display = "none";
 
-                        const relOptions = ["", "Friend", "Family", "Colleague", "Other", "Romantic"];
-                        relOptions.forEach(optionText => {
-                            const option = document.createElement("option");
-                            option.value = optionText;
-                            option.text = optionText || "Select...";
-                            if (data.relationshipType === optionText) {
-                                option.selected = true;
-                            }
-                            relationshipSelect.appendChild(option);
-                        });
+                            ["", "Friend", "Family", "Colleague", "Other", "Romantic"].forEach(optionText => {
+                                const option = document.createElement("option");
+                                option.value = optionText;
+                                option.text = optionText || "Select...";
+                                relationshipSelect.appendChild(option);
+                            });
 
-                        relationshipSelect.addEventListener("change", () => {
-                            if (relationshipSelect.value === "Other") {
-                                relationshipInput.style.display = "block";
-                                relationshipInput.classList.add("custom-input");
-                            } else {
-                                relationshipInput.style.display = "none";
-                                relationshipInput.value = "";
-                            }
-                        });
+                            relationshipSelect.addEventListener("change", () => {
+                                relationshipInput.style.display = relationshipSelect.value === "Other" ? "block" : "none";
+                            });
 
-                        relationshipTd.appendChild(relationshipSelect);
-                        relationshipTd.appendChild(relationshipInput);
+                            relationshipTd.appendChild(relationshipSelect);
+                            relationshipTd.appendChild(relationshipInput);
+                        }
                         row.appendChild(relationshipTd);
 
                         /** 🔹 Intimacy Level **/
                         const intimacyTd = document.createElement("td");
-                        const intimacySelect = document.createElement("select");
-                        intimacySelect.id = "intimacy-" + recordKey;
-                        ["", "High", "Medium", "Low"].forEach(optionText => {
-                            const option = document.createElement("option");
-                            option.value = optionText;
-                            option.text = optionText || "Select...";
-                            if (data.intimacyLevel === optionText) {
-                                option.selected = true;
-                            }
-                            intimacySelect.appendChild(option);
-                        });
-                        intimacyTd.appendChild(intimacySelect);
+                        let intimacySelect;
+                        if (data.intimacyLevel) {
+                            intimacyTd.innerHTML = `<span>${data.intimacyLevel}</span>`;
+                        } else {
+                            intimacySelect = document.createElement("select");
+                            ["", "High", "Medium", "Low"].forEach(optionText => {
+                                const option = document.createElement("option");
+                                option.value = optionText;
+                                option.text = optionText || "Select...";
+                                intimacySelect.appendChild(option);
+                            });
+                            intimacyTd.appendChild(intimacySelect);
+                        }
                         row.appendChild(intimacyTd);
 
                         /** 🔹 Frequent Interaction Place **/
                         const interactionTd = document.createElement("td");
-                        const interactionSelect = document.createElement("select");
-                        interactionSelect.id = "interaction-" + recordKey;
-                        ["", "Online", "Work", "School", "Home", "Cafe", "Sports", "Other"].forEach(optionText => {
-                            const option = document.createElement("option");
-                            option.value = optionText;
-                            option.text = optionText || "Select...";
-                            if (data.interactionPlace === optionText) {
-                                option.selected = true;
-                            }
-                            interactionSelect.appendChild(option);
-                        });
+                        let interactionSelect, interactionInput;
+                        if (data.interactionPlace) {
+                            interactionTd.innerHTML = `<span>${data.interactionPlace}</span>`;
+                        } else {
+                            interactionSelect = document.createElement("select");
+                            interactionInput = document.createElement("input");
+                            interactionInput.style.display = "none";
 
-                        const interactionInput = document.createElement("input"); // 用户输入框
-                        interactionInput.id = "interaction-input-" + recordKey;
-                        interactionInput.style.display = "none";
+                            ["", "Online", "Work", "School", "Home", "Cafe", "Sports", "Other"].forEach(optionText => {
+                                const option = document.createElement("option");
+                                option.value = optionText;
+                                option.text = optionText || "Select...";
+                                interactionSelect.appendChild(option);
+                            });
 
-                        interactionSelect.addEventListener("change", () => {
-                            if (interactionSelect.value === "Other") {
-                                interactionInput.style.display = "block";
-                                interactionInput.classList.add("custom-input");
-                            } else {
-                                interactionInput.style.display = "none";
-                                interactionInput.value = "";
-                            }
-                        });
+                            interactionSelect.addEventListener("change", () => {
+                                interactionInput.style.display = interactionSelect.value === "Other" ? "block" : "none";
+                            });
 
-                        interactionTd.appendChild(interactionSelect);
-                        interactionTd.appendChild(interactionInput);
+                            interactionTd.appendChild(interactionSelect);
+                            interactionTd.appendChild(interactionInput);
+                        }
                         row.appendChild(interactionTd);
 
                         /** 🔹 Save Button **/
                         const actionTd = document.createElement("td");
-                        const saveButton = document.createElement("button");
-                        saveButton.textContent = "Save";
+                        if (!data.relationshipType || !data.intimacyLevel || !data.interactionPlace) {
+                            const saveButton = document.createElement("button");
+                            saveButton.textContent = "Save";
 
-                        saveButton.addEventListener("click", async () => {
-                            const newRelationship = relationshipSelect.value === "Other" ? relationshipInput.value : relationshipSelect.value;
-                            const newIntimacy = intimacySelect.value;
-                            const newInteraction = interactionSelect.value === "Other" ? interactionInput.value : interactionSelect.value;
+                            saveButton.addEventListener("click", async () => {
+                                const newRelationship = relationshipSelect?.value === "Other" && relationshipInput?.value.trim() ? relationshipInput.value.trim() : relationshipSelect?.value || "N/A";
+                                const newIntimacy = intimacySelect?.value || "N/A";
+                                const newInteraction = interactionSelect?.value === "Other" && interactionInput?.value.trim() ? interactionInput.value.trim() : interactionSelect?.value || "N/A";
 
-                            const updatedData = {
-                                relationshipType: newRelationship,
-                                intimacyLevel: newIntimacy,
-                                interactionPlace: newInteraction
-                            };
+                                const updatedData = { relationshipType: newRelationship, intimacyLevel: newIntimacy, interactionPlace: newInteraction };
 
-                            try {
-                                await update(ref(database, "responses/" + recordKey), updatedData);
-                                alert("Record updated successfully!");
+                                try {
+                                    await update(ref(database, `responses/${recordKey}`), updatedData);
+                                    alert("Record updated successfully!");
+                                    relationshipTd.innerHTML = `<span>${newRelationship}</span>`;
+                                    intimacyTd.innerHTML = `<span>${newIntimacy}</span>`;
+                                    interactionTd.innerHTML = `<span>${newInteraction}</span>`;
+                                    actionTd.innerHTML = "";
+                                } catch (error) {
+                                    console.error("Update error:", error);
+                                    alert("Failed to update record: " + error.message);
+                                }
+                            });
 
-                                // 🔹 替换 `select` 为文本
-                                relationshipTd.innerHTML = `<span>${newRelationship || "N/A"}</span>`;
-                                intimacyTd.innerHTML = `<span>${newIntimacy || "N/A"}</span>`;
-                                interactionTd.innerHTML = `<span>${newInteraction || "N/A"}</span>`;
-                                saveButton.style.display = "none";
-                            } catch (error) {
-                                console.error("Update error:", error);
-                                alert("Failed to update record: " + error.message);
-                            }
-                        });
+                            actionTd.appendChild(saveButton);
+                        }
 
-                        actionTd.appendChild(saveButton);
                         row.appendChild(actionTd);
-
                         tableBody.appendChild(row);
                     });
-                } else {
-                    console.log("No records found.");
-                    document.getElementById("history-description").textContent = "No history found for this user.";
                 }
             } catch (error) {
-
+                console.error("Error fetching data:", error);
+                alert("Failed to load history.");
             }
         });
     </script>
