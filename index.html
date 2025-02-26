@@ -25,15 +25,14 @@
             </div>
 
             <div class="button-container">
-                <button id="copy-btn">Copy Link</button>
+                <!-- <button id="copy-btn">Copy Link</button> -->
                 <button id="history-btn">My History</button>
-
             </div>
             Share on:
             <div class="button-container">
                 <button id="share-btn">Share Link</button>
                 <button id="kakao-share-btn">KakaoTalk</button>
-                <button id="kakao-share-btn">WhatsApp</button>
+                <button id="whats-share-btn">WhatsApp</button>
             </div>
         </div>
 
@@ -44,6 +43,22 @@
     </div>
 
     <script>
+        document.getElementById('whatsapp-share-btn').addEventListener('click', function () {
+            const username = document.getElementById('username').value.trim();
+            if (username === "") {
+                alert("Please enter a username.");
+                return;
+            }
+
+            const baseUrl = window.location.origin;
+            const questionnaireUrl = `${baseUrl}/questionnaire.html?username=${encodeURIComponent(username)}`;
+
+            // 生成 WhatsApp 分享链接
+            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent("Check out this MBTI questionnaire! " + questionnaireUrl)}`;
+
+            // 打开 WhatsApp
+            window.open(whatsappUrl, "_blank");
+        });
 
         document.getElementById('kakao-share-btn').addEventListener('click', function () {
             const username = document.getElementById('username').value.trim();
