@@ -1,5 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
+<script src="https://developers.kakao.com/sdk/js/kakao.min.js"></script>
+<script>
+    Kakao.init('6051e4886262c1b746fe08e10f33f84a'); // 这里填入你的 Kakao API Key
+</script>
 
 <head>
     <meta charset="UTF-8">
@@ -7,6 +11,7 @@
     <title>MBTI Questionnaire Link</title>
     <script src="switch_language.js" defer></script>
     <link rel="stylesheet" href="style.css">
+
 </head>
 
 <body>
@@ -16,13 +21,13 @@
         <div class="form-container">
             <h1>MBTI Login Page</h1>
             <div class="form-row">
-                <!-- <label for="username">Input your name</label> -->
                 <input type="text" id="username" name="username" placeholder="Your unique username" required>
             </div>
 
             <div class="button-container">
-                <button id="copy-btn">Copy Link</button>
+                <button id="share-btn">Share Link</button>
                 <button id="history-btn">My History</button>
+                <button id="kakao-share-btn">Share on KakaoTalk</button>
             </div>
         </div>
 
@@ -33,7 +38,40 @@
     </div>
 
     <script>
-        document.getElementById('copy-btn').addEventListener('click', () => {
+        document.getElementById('kakao-share-btn').addEventListener('click', function () {
+            const username = document.getElementById('username').value.trim();
+            if (username === "") {
+                alert("Please enter a username.");
+                return;
+            }
+
+            const baseUrl = window.location.hostname === '127.0.0.1' ?
+                'http://127.0.0.1:5500' : window.location.origin;
+            const questionnaireUrl = `${baseUrl}/questionnaire.html?username=${encodeURIComponent(username)}`;
+
+            Kakao.Link.sendDefault({
+                objectType: 'feed',
+                content: {
+                    title: 'MBTI Questionnaire',
+                    description: 'Fill out this questionnaire now!',
+                    imageUrl: 'https://your-image-url.com/image.png',
+                    link: {
+                        mobileWebUrl: questionnaireUrl,
+                        webUrl: questionnaireUrl
+                    }
+                },
+                buttons: [
+                    {
+                        title: 'Open Questionnaire',
+                        link: {
+                            mobileWebUrl: questionnaireUrl,
+                            webUrl: questionnaireUrl
+                        }
+                    }
+                ]
+            });
+        });
+        document.getElementById('share-btn').addEventListener('click', () => {
             const username = document.getElementById('username').value.trim();
             if (username === "") {
                 alert("Please enter a username.");
@@ -45,14 +83,29 @@
 
             const questionnaireUrl = `${baseUrl}/questionnaire.html?username=${encodeURIComponent(username)}`;
 
-            const tempInput = document.createElement('input');
-            tempInput.value = questionnaireUrl;
-            document.body.appendChild(tempInput);
-            tempInput.select();
-            document.execCommand('copy');
-            document.body.removeChild(tempInput);
+            // 检测浏览器是否支持 Web Share API
+            if (navigator.share) {
+                navigator.share({
+                    title: "MBTI Questionnaire",
+                    text: `Hey! Here’s your MBTI questionnaire link:`,
+                    url: questionnaireUrl
+                }).then(() => {
+                    console.log('Link shared successfully');
+                }).catch((error) => {
+                    console.error('Error sharing:', error);
+                });
+            } else {
+                // 兼容方案：弹出手动分享选项
+                const shareOptions = `
+                    Copy the link manually: ${questionnaireUrl}
 
-            alert(`The questionnaire link has been copied!`);
+                    Or share via:
+                    - WeChat: Open WeChat and paste the link
+                    - WhatsApp: <a href="https://wa.me/?text=${encodeURIComponent(questionnaireUrl)}" target="_blank">Click here</a>
+                    - Email: <a href="mailto:?subject=MBTI Questionnaire&body=${encodeURIComponent(questionnaireUrl)}">Click to send email</a>
+                `;
+                alert(shareOptions);
+            }
         });
 
         document.getElementById('history-btn').addEventListener('click', () => {
@@ -69,6 +122,7 @@
 
 </html>
 
+
 <!-- <!DOCTYPE html>
 <html lang="en">
 
@@ -82,11 +136,12 @@
 
 <body>
 
-    <h1>MBTI Questionnaire Link</h1>
-    <p id="description">Click the button below to copy your unique questionnaire link.</p>
-
+    <div class="container">
+        左侧表单 
+<div class="form-container">
+    <h1>MBTI Login Page</h1>
     <div class="form-row">
-        <label for="username">Enter your username:</label>
+        <!-- <label for="username">Input your name</label> 
         <input type="text" id="username" name="username" placeholder="Your unique username" required>
     </div>
 
@@ -94,49 +149,46 @@
         <button id="copy-btn">Copy Link</button>
         <button id="history-btn">My History</button>
     </div>
+</div>
 
+<!-- 右侧插图 
+<div class="image-container">
+    <!-- 这里留空，后续填充插图 
+</div>
+</div>
 
+<script>
+    document.getElementById('copy-btn').addEventListener('click', () => {
+        const username = document.getElementById('username').value.trim();
+        if (username === "") {
+            alert("Please enter a username.");
+            return;
+        }
+        const baseUrl = window.location.hostname === '127.0.0.1' ?
+            'http://127.0.0.1:5500' :
+            window.location.origin;
 
-    <script>
-        document.getElementById('copy-btn').addEventListener('click', () => {
-            // 获取用户输入的用户名
-            const username = document.getElementById('username').value.trim();
+        const questionnaireUrl = `${baseUrl}/questionnaire.html?username=${encodeURIComponent(username)}`;
 
-            if (username === "") {
-                alert("Please enter a username.");
-                return;
-            }
-            const baseUrl = window.location.hostname === '127.0.0.1' ?
-                'http://127.0.0.1:5500' :
-                window.location.origin;  // 如果是 GitHub Pages，使用其基础 URL
+        const tempInput = document.createElement('input');
+        tempInput.value = questionnaireUrl;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
 
-            // 生成用户专属的问卷链接
+        alert(`The questionnaire link has been copied!`);
+    });
 
-            // 为每个用户生成独一无二的链接
-            const questionnaireUrl = `${baseUrl}/questionnaire.html?username=${encodeURIComponent(username)}`;
-
-            // 创建一个临时的输入元素来存储链接
-            const tempInput = document.createElement('input');
-            tempInput.value = questionnaireUrl;
-            document.body.appendChild(tempInput);
-            tempInput.select();
-            document.execCommand('copy'); // 执行复制操作
-            document.body.removeChild(tempInput); // 移除临时输入框
-
-            // 提示用户链接已复制
-            alert(`The questionnaire link has been copied!`);
-        });
-
-        document.getElementById('history-btn').addEventListener('click', () => {
-            const username = document.getElementById('username').value.trim();
-            if (username === "") {
-                alert("Please enter a username.");
-                return;
-            }
-            window.location.href = `history.html?username=${encodeURIComponent(username)}`;
-        });
-
-    </script>
+    document.getElementById('history-btn').addEventListener('click', () => {
+        const username = document.getElementById('username').value.trim();
+        if (username === "") {
+            alert("Please enter a username.");
+            return;
+        }
+        window.location.href = `history.html?username=${encodeURIComponent(username)}`;
+    });
+</script>
 
 </body>
 
