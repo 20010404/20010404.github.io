@@ -35,6 +35,11 @@
 
         <!-- 问卷表单 -->
         <form id="questionnaire-form" onsubmit="submitQuestionnaire(event)">
+
+            <div class="form-row">
+                <label for="referenceCode" id="label-referenceCode">Reference Code:</label>
+                <input type="text" id="referenceCode" name="referenceCode" placeholder="13029384  " required>
+            </div>
             <div class="form-row">
                 <label for="email" id="label-email">Your email or your identical nickname:</label>
                 <input type="text" id="email" name="email" placeholder="a.com or Bob  " required>
@@ -98,24 +103,23 @@
                 const analytics = getAnalytics(app);
                 const database = getDatabase(app);
 
-                // **🔥 处理 URL 参数**
-                const urlParams = new URLSearchParams(window.location.search);
-                const username = urlParams.get("username");
-                console.log("URL Parameters:", { username });
+                // // **🔥 处理 URL 参数**
+                // const urlParams = new URLSearchParams(window.location.search);
+                // const username = urlParams.get("username");
+                // console.log("URL Parameters:", { username });
 
-                if (username) {
-                    document.getElementById("username").textContent = username;
-                } else {
-                    console.error("No username found in URL parameters.");
-                }
+                // if (username) {
+                //     document.getElementById("username").textContent = username;
+                // } else {
+                //     console.error("No username found in URL parameters.");
+                // }
 
                 // **🔥 绑定表单提交事件**
                 document.getElementById("questionnaire-form").addEventListener("submit", async (event) => {
                     event.preventDefault();
-
                     // **收集用户输入的数据**
                     const data = {
-                        username: username,
+                        referenceCode: document.getElementById("referenceCode").value,
                         email: document.getElementById("email").value,
                         ie: document.getElementById("ie").value,
                         ns: document.getElementById("ns").value,

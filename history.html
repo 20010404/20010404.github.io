@@ -54,17 +54,17 @@
             const database = getDatabase(app);
 
             const urlParams = new URLSearchParams(window.location.search);
-            const username = urlParams.get("username");
+            const referenceCode = urlParams.get("referenceCode");
 
-            if (!username) {
-                alert("Invalid access. No username provided.");
+            if (!referenceCode) {
+                alert("Invalid access. No referenceCode provided.");
                 window.location.href = "index.html";
                 return;
             }
 
             try {
                 const dbRef = ref(database, "responses");
-                const q = query(dbRef, orderByChild("username"), equalTo(username));
+                const q = query(dbRef, orderByChild("referenceCode"), equalTo(referenceCode));
                 const snapshot = await get(q);
 
                 if (snapshot.exists()) {

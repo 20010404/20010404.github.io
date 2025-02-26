@@ -17,11 +17,12 @@
             <h1>MBTI Login Page</h1>
             <div class="form-row">
                 <!-- <label for="username">Input your name</label> -->
-                <input type="text" id="username" name="username" placeholder="Your unique username" required>
+                <input type="text" id="referenceCode" name="referenceCode" placeholder="Enter your reference code"
+                    required>
             </div>
 
             <div class="button-container">
-                <button id="copy-btn">Copy Link</button>
+                <!-- <button id="copy-btn">Copy Link</button> -->
                 <button id="history-btn">My History</button>
             </div>
         </div>
@@ -34,16 +35,16 @@
 
     <script>
         document.getElementById('copy-btn').addEventListener('click', () => {
-            const username = document.getElementById('username').value.trim();
-            if (username === "") {
-                alert("Please enter a username.");
+            const referenceCode = document.getElementById('referenceCode').value.trim();
+            if (referenceCode === "") {
+                alert("Please enter a reference code.");
                 return;
             }
             const baseUrl = window.location.hostname === '127.0.0.1' ?
                 'http://127.0.0.1:5500' :
                 window.location.origin;
 
-            const questionnaireUrl = `${baseUrl}/questionnaire.html?username=${encodeURIComponent(username)}`;
+            const questionnaireUrl = `${baseUrl}/questionnaire.html`;
 
             const tempInput = document.createElement('input');
             tempInput.value = questionnaireUrl;
@@ -56,12 +57,12 @@
         });
 
         document.getElementById('history-btn').addEventListener('click', () => {
-            const username = document.getElementById('username').value.trim();
-            if (username === "") {
-                alert("Please enter a username.");
+            const referenceCode = document.getElementById('referenceCode').value.trim();
+            if (referenceCode === "") {
+                alert("Please enter a reference code.");
                 return;
             }
-            window.location.href = `history.html?username=${encodeURIComponent(username)}`;
+            window.location.href = `history.html?referenceCode=${encodeURIComponent(referenceCode)}`;
         });
     </script>
 
