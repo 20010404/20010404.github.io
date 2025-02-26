@@ -24,15 +24,22 @@
                 <input type="text" id="username" name="username" placeholder="Your unique username" required>
             </div>
 
+
+            Share link to:
             <div class="button-container">
-                <!-- <button id="copy-btn">Copy Link</button> -->
-                <button id="history-btn">My History</button>
-            </div>
-            Share on:
-            <div class="button-container">
-                <button id="share-btn">Share Link</button>
+                <!-- <button id="share-btn">Share Link</button>-->
                 <button id="kakao-share-btn">KakaoTalk</button>
                 <button id="whats-share-btn">WhatsApp</button>
+                <button id="share-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="white">
+                        <path
+                            d="M18 16v4H2V6h4V4H2C.9 4 0 4.9 0 6v14c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-4h-2zM15 3v2h5.59L9.17 16.41l1.41 1.41L22 6.41V12h2V3h-9z" />
+                    </svg>
+                </button>
+            </div>
+            <div class="button-container">
+                <!-- <button id="copy-btn">Copy Link</button> -->
+                <!-- <button id="history-btn">My History</button> -->
             </div>
         </div>
 
@@ -43,7 +50,7 @@
     </div>
 
     <script>
-        document.getElementById('whatsapp-share-btn').addEventListener('click', function () {
+        document.getElementById('whats-share-btn').addEventListener('click', function () {
             const username = document.getElementById('username').value.trim();
             if (username === "") {
                 alert("Please enter a username.");
@@ -54,7 +61,7 @@
             const questionnaireUrl = `${baseUrl}/questionnaire.html?username=${encodeURIComponent(username)}`;
 
             // 生成 WhatsApp 分享链接
-            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent("Check out this MBTI questionnaire! " + questionnaireUrl)}`;
+            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent("Please input your feelings about me. Check out this MBTI questionnaire! " + questionnaireUrl)}`;
 
             // 打开 WhatsApp
             window.open(whatsappUrl, "_blank");
@@ -74,8 +81,8 @@
             Kakao.Link.sendDefault({
                 objectType: 'feed',
                 content: {
-                    title: 'MBTI Questionnaire',
-                    description: 'Fill out this questionnaire now!',
+                    title: 'MBTI study',
+                    description: 'Please input your feelings about me, like what type of MBTI you think I am',
                     imageUrl: 'https://your-image-url.com/image.png',
                     link: {
                         mobileWebUrl: questionnaireUrl,
@@ -93,27 +100,28 @@
                 ]
             });
         });
-        document.getElementById('copy-btn').addEventListener('click', () => {
-            const username = document.getElementById('username').value.trim();
-            if (username === "") {
-                alert("Please enter a username.");
-                return;
-            }
-            const baseUrl = window.location.hostname === '127.0.0.1' ?
-                'http://127.0.0.1:5500' :
-                window.location.origin;
 
-            const questionnaireUrl = `${baseUrl}/questionnaire.html?username=${encodeURIComponent(username)}`;
+        // document.getElementById('copy-btn').addEventListener('click', () => {
+        //     const username = document.getElementById('username').value.trim();
+        //     if (username === "") {
+        //         alert("Please enter a username.");
+        //         return;
+        //     }
+        //     const baseUrl = window.location.hostname === '127.0.0.1' ?
+        //         'http://127.0.0.1:5500' :
+        //         window.location.origin;
 
-            const tempInput = document.createElement('input');
-            tempInput.value = questionnaireUrl;
-            document.body.appendChild(tempInput);
-            tempInput.select();
-            document.execCommand('copy');
-            document.body.removeChild(tempInput);
+        //     const questionnaireUrl = `${baseUrl}/questionnaire.html?username=${encodeURIComponent(username)}`;
 
-            alert(`The questionnaire link has been copied!`);
-        });
+        //     const tempInput = document.createElement('input');
+        //     tempInput.value = questionnaireUrl;
+        //     document.body.appendChild(tempInput);
+        //     tempInput.select();
+        //     document.execCommand('copy');
+        //     document.body.removeChild(tempInput);
+
+        //     alert(`The questionnaire link has been copied!`);
+        // });
 
         document.getElementById('share-btn').addEventListener('click', () => {
             const username = document.getElementById('username').value.trim();
@@ -152,14 +160,15 @@
             }
         });
 
-        document.getElementById('history-btn').addEventListener('click', () => {
-            const username = document.getElementById('username').value.trim();
-            if (username === "") {
-                alert("Please enter a username.");
-                return;
-            }
-            window.location.href = `history.html?username=${encodeURIComponent(username)}`;
-        });
+        //     document.getElementById('history-btn').addEventListener('click', () => {
+        //         const username = document.getElementById('username').value.trim();
+        //         if (username === "") {
+        //             alert("Please enter a username.");
+        //             return;
+        //         }
+        //         window.location.href = `history.html?username=${encodeURIComponent(username)}`;
+        //     });
+        // 
     </script>
 
 </body>
