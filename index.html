@@ -25,9 +25,15 @@
             </div>
 
             <div class="button-container">
-                <button id="share-btn">Share Link</button>
+                <button id="copy-btn">Copy Link</button>
                 <button id="history-btn">My History</button>
-                <button id="kakao-share-btn">Share on KakaoTalk</button>
+
+            </div>
+            Share on:
+            <div class="button-container">
+                <button id="share-btn">Share Link</button>
+                <button id="kakao-share-btn">KakaoTalk</button>
+                <button id="kakao-share-btn">WhatsApp</button>
             </div>
         </div>
 
@@ -38,6 +44,7 @@
     </div>
 
     <script>
+
         document.getElementById('kakao-share-btn').addEventListener('click', function () {
             const username = document.getElementById('username').value.trim();
             if (username === "") {
@@ -71,6 +78,28 @@
                 ]
             });
         });
+        document.getElementById('copy-btn').addEventListener('click', () => {
+            const username = document.getElementById('username').value.trim();
+            if (username === "") {
+                alert("Please enter a username.");
+                return;
+            }
+            const baseUrl = window.location.hostname === '127.0.0.1' ?
+                'http://127.0.0.1:5500' :
+                window.location.origin;
+
+            const questionnaireUrl = `${baseUrl}/questionnaire.html?username=${encodeURIComponent(username)}`;
+
+            const tempInput = document.createElement('input');
+            tempInput.value = questionnaireUrl;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+
+            alert(`The questionnaire link has been copied!`);
+        });
+
         document.getElementById('share-btn').addEventListener('click', () => {
             const username = document.getElementById('username').value.trim();
             if (username === "") {
