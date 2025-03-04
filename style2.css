@@ -13,6 +13,43 @@ body {
     align-items: center;
     height: 100vh;
 }
+.graph-selection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.graph-options {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    justify-content: center;
+    align-items: center;
+}
+
+.graph:nth-child(5) {
+    grid-column: 2 / span 1; /* 让第 5 个图形在第二行居中 */
+}
+
+.graph {
+    width: 80px; /* 让图形更小 */
+    height: 80px;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    background: transparent;
+}
+
+.graph.selected svg circle {
+    stroke: url(#gradient-border);
+    stroke-width: 3;
+}
+
+.graph svg {
+    width: 100%;
+    height: 100%;
+}
+
 
 /* 主要容器，表单 & 语言选择 */
 .container {

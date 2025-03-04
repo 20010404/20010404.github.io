@@ -39,6 +39,14 @@
                 <label for="email" id="label-email">Your email or your identical nickname:</label>
                 <input type="text" id="email" name="email" placeholder="a.com or Bob  " required>
             </div>
+            <p>Please choose the graph that best describes your relationship closeness with 
+                <span id="username"></span>:
+            </p>
+
+            <div class="graph-selection">
+                <input type="hidden" id="selectedGraph" name="intimacyGraph" value="">
+                <div class="graph-options"></div>
+            </div>
             <div class="form-row">
                 <label for="ie" id="label-ie">I/E Percentage:</label>
                 <span class="tooltip">?
@@ -108,7 +116,48 @@
                 } else {
                     console.error("No username found in URL parameters.");
                 }
+                const graphOptionsContainer = document.querySelector(".graph-options");
+                const selectedGraphInput = document.getElementById("selectedGraph");
 
+                const positions = [
+                    { cx1: 30, cx2: 70 }, // 1
+                    { cx1: 40, cx2: 60 }, // 2
+                    { cx1: 38, cx2: 62 }, // 3
+                    { cx1: 35, cx2: 65 }, // 4
+                    { cx1: 33, cx2: 67 }, // 5
+                    { cx1: 32, cx2: 68 }, // 6
+                    { cx1: 30, cx2: 70 }  // 7
+                ];
+
+                for (let i = 0; i < 7; i++) {
+                    const graphContainer = document.createElement("div");
+                    graphContainer.classList.add("graph");
+                    graphContainer.dataset.value = i + 1;
+                    graphContainer.innerHTML = createRelationshipGraph(positions[i].cx1, positions[i].cx2, "You", username);
+
+                    graphContainer.addEventListener("click", () => {
+                        document.querySelectorAll(".graph").forEach(g => g.classList.remove("selected"));
+                        graphContainer.classList.add("selected");
+                        selectedGraphInput.value = graphContainer.dataset.value;
+                    });
+
+                    graphOptionsContainer.appendChild(graphContainer);
+                }
+
+                function createRelationshipGraph(cx1, cx2, selfText, otherText) {
+                    return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                                <defs>
+                                    <linearGradient id="gradient-border" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" style="stop-color:#2489b8; stop-opacity:1" />
+                                        <stop offset="100%" style="stop-color:#e995b8; stop-opacity:1" />
+                                    </linearGradient>
+                                </defs>
+                                <circle cx="${cx1}" cy="50" r="20" stroke="black" stroke-width="2" fill="none"/>
+                                <circle cx="${cx2}" cy="50" r="20" stroke="black" stroke-width="2" fill="none"/>
+                                <text x="${cx1 - 10}" y="50" font-size="8">${selfText}</text>
+                                <text x="${cx2 - 10}" y="50" font-size="8">${otherText}</text>
+                            </svg>`;
+                }
                 // **🔥 绑定表单提交事件**
                 document.getElementById("questionnaire-form").addEventListener("submit", async (event) => {
                     event.preventDefault();
@@ -121,6 +170,7 @@
                         ns: document.getElementById("ns").value,
                         ft: document.getElementById("ft").value,
                         jp: document.getElementById("jp").value,
+                        intimacyGraph :document.getElementById("selectedGraph").value,
                         timestamp: new Date().toISOString()
                     };
 
@@ -151,7 +201,6 @@
                 document.getElementById(`lang-${savedLang}`).checked = true;
                 changeLanguage(savedLang);
             });
-
         </script>
 </body>
 
