@@ -177,10 +177,18 @@
 
                     try {
                         // **🔥 存入 Firebase**
+                        // **🔥 存入 Firebase**
                         const dbRef = ref(database, "responses");
                         await push(dbRef, data);
-                        console.log("Data saved successfully to Firebase:", data);
-                        alert("Data has been successfully submitted to firebase!");
+                        // **断开 Firebase 连接**
+                        firebase.database().goOffline();
+                        // **显示提示**
+                        alert("Data has been successfully submitted to Firebase! The page will now close.");
+                        // **自动关闭网页**
+                        setTimeout(() => {
+                            window.close();
+                        }, 1000);  // 1秒后关闭
+
                     } catch (error) {
                         console.error("Firebase Error:", error);
                         alert("Error submitting data. Please try again.");
