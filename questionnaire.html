@@ -29,17 +29,18 @@
 
         <h1 id="form-title">MBTI survey - <span id="username"></span></h1>
         <p id="introduction">
-            This is an MBTI perception form, you can answer how you perceive him/her in 4 different aspects according to
+            This is an MBTI perception form, you can answer how you perceive <span id="username"></span>'s MBTI
+            according to
             real-life interactions.
         </p>
 
         <!-- 问卷表单 -->
         <form id="questionnaire-form" onsubmit="submitQuestionnaire(event)">
             <div class="form-row">
-                <label for="email" id="label-email">1. Your email or your identical nickname:</label>
+                <label for="email" id="label-email">Your email or your identical nickname:</label>
                 <input type="text" id="email" name="email" placeholder="a.com or Bob  " required>
             </div>
-            <p id="relation">2. Please choose the graph that best describes your relationship closeness with<span
+            <p id="relation">Please choose the graph that best describes your relationship closeness with <span
                     id="username"></span>
             </p>
 
@@ -48,7 +49,7 @@
                 <div class="graph-options"></div>
             </div>
             <div class="form-row">
-                <label for="ie" id="label-ie">3. I/E Percentage:</label>
+                <label for="ie" id="label-ie">I/E Percentage:</label>
                 <span class="tooltip">?
                     <span class="tooltip-text" id="tooltip-ie">I: Introversion, E: Extraversion</span>
                 </span>
@@ -56,7 +57,7 @@
             </div>
 
             <div class="form-row">
-                <label for="ns" id="label-ns">4. N/S Percentage:</label>
+                <label for="ns" id="label-ns">N/S Percentage:</label>
                 <span class="tooltip">?
                     <span class="tooltip-text" id="tooltip-ns">N: Intuition, S: Sensing</span>
                 </span>
@@ -64,7 +65,7 @@
             </div>
 
             <div class="form-row">
-                <label for="ft" id="label-ft">5. F/T Percentage:</label>
+                <label for="ft" id="label-ft"> F/T Percentage:</label>
                 <span class="tooltip">?
                     <span class="tooltip-text" id="tooltip-ft">F: Feeling, T: Thinking</span>
                 </span>
@@ -72,7 +73,7 @@
             </div>
 
             <div class="form-row">
-                <label for="jp" id="label-jp">6. J/P Percentage:</label>
+                <label for="jp" id="label-jp">J/P Percentage:</label>
                 <span class="tooltip">?
                     <span class="tooltip-text" id="tooltip-jp">J: Judging, P: Perceiving</span>
                 </span>
