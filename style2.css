@@ -29,6 +29,7 @@ body {
     /* 让图形水平居中 */
     align-items: center;
     gap: 3px;
+    margin-bottom: 20px;
     /* 调整间距 */
 }
 
@@ -156,7 +157,7 @@ p {
     max-width: 600px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    margin-bottom: 8px;
     /* 让内容均匀分布 */
 }
 
