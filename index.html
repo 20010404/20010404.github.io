@@ -39,7 +39,7 @@
             </div>
             <div class="button-container">
                 <!-- <button id="copy-btn">Copy Link</button> -->
-                <!-- <button id="history-btn">My History</button> -->
+                <button id="history-btn">My History</button>
             </div>
         </div>
 
@@ -160,15 +160,15 @@
             }
         });
 
-        //     document.getElementById('history-btn').addEventListener('click', () => {
-        //         const username = document.getElementById('username').value.trim();
-        //         if (username === "") {
-        //             alert("Please enter a username.");
-        //             return;
-        //         }
-        //         window.location.href = `history.html?username=${encodeURIComponent(username)}`;
-        //     });
-        // 
+        document.getElementById('history-btn').addEventListener('click', () => {
+            const username = document.getElementById('username').value.trim();
+            if (username === "") {
+                alert("Please enter a username.");
+                return;
+            }
+            window.location.href = `history.html?username=${encodeURIComponent(username)}`;
+        });
+
     </script>
 
 </body>

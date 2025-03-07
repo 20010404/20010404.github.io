@@ -158,7 +158,274 @@
                 <text x="${cx2 - 15}" y="40" font-size="10">${otherText}</text>
             </svg>`;
                 }
+                // 在表单提交成功后调用此函数
+                function triggerFireworks() {
+                    // 创建canvas元素
+                    const canvas = document.createElement('canvas');
+                    canvas.id = 'fireworks-canvas';
+                    canvas.style.position = 'fixed';
+                    canvas.style.top = '0';
+                    canvas.style.left = '0';
+                    canvas.style.width = '100%';
+                    canvas.style.height = '100%';
+                    canvas.style.pointerEvents = 'none';
+                    canvas.style.zIndex = '9999';
+                    document.body.appendChild(canvas);
+
+                    let ctx, w, h, particles = [];
+                    let xPoint, yPoint;
+
+                    // 初始化canvas
+                    function initCanvas() {
+                        ctx = canvas.getContext("2d");
+                        resizeCanvas();
+                        window.requestAnimationFrame(updateWorld);
+                    }
+
+                    // 调整canvas大小
+                    function resizeCanvas() {
+                        w = canvas.width = window.innerWidth;
+                        h = canvas.height = window.innerHeight;
+                    }
+
+                    // 请求动画帧兼容处理
+                    window.requestAnimationFrame =
+                        window.requestAnimationFrame ||
+                        window.webkitRequestAnimationFrame ||
+                        window.mozRequestAnimationFrame ||
+                        window.oRequestAnimationFrame ||
+                        window.msRequestAnimationFrame ||
+                        function (callback) {
+                            window.setTimeout(callback, 1000 / 60);
+                        };
+
+                    // 更新世界状态
+                    function updateWorld() {
+                        update();
+                        paint();
+                        // 如果还有粒子，继续动画
+                        if (particles.length > 0) {
+                            window.requestAnimationFrame(updateWorld);
+                        } else {
+                            // 烟花结束后移除canvas
+                            setTimeout(() => {
+                                document.body.removeChild(canvas);
+                            }, 1000);
+                        }
+                    }
+
+                    // 更新粒子
+                    function update() {
+                        // 创建多个烟花，每隔一段时间创建一个
+                        if (fireworksCount < maxFireworks) {
+                            createFirework();
+                            fireworksCount++;
+                            setTimeout(() => {
+                                if (particles.length < 1000) {
+                                    createFirework();
+                                    fireworksCount++;
+                                }
+                            }, 300);
+                        }
+
+                        // 更新粒子状态
+                        let alive = [];
+                        for (let i = 0; i < particles.length; i++) {
+                            if (particles[i].move()) {
+                                alive.push(particles[i]);
+                            }
+                        }
+                        particles = alive;
+                    }
+
+                    // 绘制粒子
+                    // function paint() {
+                    //     // 半透明黑色背景，形成拖尾效果
+                    //     ctx.globalCompositeOperation = 'source-over';
+                    //     ctx.fillStyle = "rgba(0,0,0,0.1)";
+                    //     ctx.fillRect(0, 0, w, h);
+
+                    //     // 使用"lighter"混合模式使重叠的粒子更亮
+                    //     ctx.globalCompositeOperation = 'lighter';
+                    //     for (let i = 0; i < particles.length; i++) {
+                    //         particles[i].draw(ctx);
+                    //     }
+                    // }
+                    function paint() {
+                        // 清除画布但保持透明背景
+                        ctx.clearRect(0, 0, w, h);
+
+                        // 使用"lighter"混合模式使重叠的粒子更亮
+                        ctx.globalCompositeOperation = 'lighter';
+                        for (let i = 0; i < particles.length; i++) {
+                            particles[i].draw(ctx);
+                        }
+                    }
+
+                    // 创建一个烟花
+                    function createFirework() {
+                        // 随机位置，但更倾向于屏幕中央
+                        xPoint = w / 2 + (Math.random() - 0.5) * w * 0.6;
+                        yPoint = h / 2 + (Math.random() - 0.5) * h * 0.6;
+
+                        // 每个烟花的粒子数量
+                        const nFire = Math.random() * 100 + 100;
+
+                        // 随机颜色
+                        const colors = [
+                            "rgb(255, 100, 100)", // 红色
+                            "rgb(255, 150, 50)",  // 橙色
+                            "rgb(255, 200, 0)",   // 黄色
+                            "rgb(100, 255, 100)", // 绿色
+                            "rgb(50, 150, 255)",  // 蓝色
+                            "rgb(200, 100, 255)"  // 紫色
+                        ];
+                        const c = colors[Math.floor(Math.random() * colors.length)];
+
+                        // 创建粒子
+                        for (let i = 0; i < nFire; i++) {
+                            const particle = new Particle();
+                            particle.color = c;
+                            const vy = Math.sqrt(25 - particle.vx * particle.vx);
+                            if (Math.abs(particle.vy) > vy) {
+                                particle.vy = particle.vy > 0 ? vy : -vy;
+                            }
+                            particles.push(particle);
+                        }
+                    }
+
+                    // 粒子类
+                    function Particle() {
+                        this.w = this.h = Math.random() * 4 + 2;
+
+                        this.x = xPoint - this.w / 2;
+                        this.y = yPoint - this.h / 2;
+
+                        // 随机速度
+                        this.vx = (Math.random() - 0.5) * 10;
+                        this.vy = (Math.random() - 0.5) * 10;
+
+                        this.alpha = Math.random() * 0.5 + 0.5;
+
+                        this.color;
+                    }
+
+                    // 粒子方法
+                    Particle.prototype = {
+                        gravity: 0.05,
+                        move: function () {
+                            this.x += this.vx;
+                            this.vy += this.gravity;
+                            this.y += this.vy;
+                            this.alpha -= 0.01;
+                            if (this.x <= -this.w || this.x >= w ||
+                                this.y >= h ||
+                                this.alpha <= 0) {
+                                return false;
+                            }
+                            return true;
+                        },
+                        draw: function (c) {
+                            c.save();
+                            c.beginPath();
+
+                            c.translate(this.x + this.w / 2, this.y + this.h / 2);
+                            c.arc(0, 0, this.w, 0, Math.PI * 2);
+                            c.fillStyle = this.color;
+                            c.globalAlpha = this.alpha;
+
+                            c.closePath();
+                            c.fill();
+                            c.restore();
+                        }
+                    };
+
+                    // 控制烟花数量
+                    let fireworksCount = 0;
+                    let maxFireworks = 5; // 最多显示5个烟花
+
+                    // 初始化canvas并开始动画
+                    initCanvas();
+                }
+
+                // 创建单个烟花
+                function createFirework(container, centerX, centerY, colors) {
+                    // 直接从中心爆炸，不需要上升动画
+                    explode(container, centerX, centerY, colors[Math.floor(Math.random() * colors.length)]);
+                }
+
+                // 烟花爆炸效果
+                function explode(container, x, y, color) {
+                    // 增加粒子数量，使烟花看起来更丰富
+                    const particles = 60 + Math.floor(Math.random() * 40);
+
+                    for (let i = 0; i < particles; i++) {
+                        const particle = document.createElement('div');
+
+                        // 创建更大、更亮的粒子，有些粒子较长（像图片中的光线效果）
+                        const isLongParticle = Math.random() > 0.7;
+
+                        particle.style.position = 'absolute';
+                        particle.style.width = isLongParticle ? '2px' : '3px';
+                        particle.style.height = isLongParticle ? '10px' : '3px';
+                        particle.style.borderRadius = isLongParticle ? '2px' : '50%';
+                        particle.style.backgroundColor = color;
+                        particle.style.boxShadow = `0 0 6px 1px ${color}`;
+                        particle.style.opacity = '0.9';
+                        particle.style.left = `${x}px`;
+                        particle.style.top = `${y}px`;
+
+                        if (isLongParticle) {
+                            // 设置长粒子的初始旋转角度
+                            particle.style.transform = 'rotate(0deg)';
+                        }
+
+                        container.appendChild(particle);
+
+                        // 随机方向，但保持均匀分布以形成圆形烟花
+                        const angle = (i / particles) * Math.PI * 2 + (Math.random() * 0.2 - 0.1);
+                        const speed = 2 + Math.random() * 4;
+                        const distance = 100 + Math.random() * 150; // 最大距离
+
+                        // 运动和消失动画
+                        let start = null;
+                        const duration = 1200 + Math.random() * 800;
+
+                        function animateParticle(timestamp) {
+                            if (!start) start = timestamp;
+                            const progress = (timestamp - start) / duration;
+
+                            if (progress < 1) {
+                                // 使用二次方曲线让粒子速度先快后慢
+                                const currentDistance = distance * (progress < 0.7 ? progress : 0.7 + (progress - 0.7) * 0.3);
+
+                                const newX = x + Math.cos(angle) * currentDistance;
+                                const newY = y + Math.sin(angle) * currentDistance;
+
+                                particle.style.left = `${newX}px`;
+                                particle.style.top = `${newY}px`;
+
+                                if (isLongParticle) {
+                                    // 旋转长粒子，使其指向爆炸中心
+                                    const rotationAngle = Math.atan2(newY - y, newX - x) * (180 / Math.PI);
+                                    particle.style.transform = `rotate(${rotationAngle}deg)`;
+                                }
+
+                                // 闪烁和淡出效果
+                                particle.style.opacity = Math.sin(progress * Math.PI) * (1 - progress);
+
+                                requestAnimationFrame(animateParticle);
+                            } else {
+                                container.removeChild(particle);
+                            }
+                        }
+
+                        requestAnimationFrame(animateParticle);
+                    }
+                }
+
                 // **🔥 绑定表单提交事件**
+
                 document.getElementById("questionnaire-form").addEventListener("submit", async (event) => {
                     event.preventDefault();
 
@@ -181,15 +448,15 @@
                         // **🔥 存入 Firebase**
                         const dbRef = ref(database, "responses");
                         await push(dbRef, data);
+                        triggerFireworks();
                         // **断开 Firebase 连接**
                         // firebase.database().goOffline();
                         // **显示提示**
-                        alert("Data has been successfully submitted to Firebase! The page will now close.");
-                        // **自动关闭网页**
+                        // 自动关闭网页
                         setTimeout(() => {
+                            alert("Thanks for your participation! The page will now close.");
                             window.close();
-                        }, 1000);  // 1秒后关闭
-
+                        }, 3000);
                     } catch (error) {
                         console.error("Firebase Error:", error);
                         alert("Error submitting data. Please try again.");
