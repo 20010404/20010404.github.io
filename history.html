@@ -21,12 +21,13 @@
                 <th>N/S</th>
                 <th>F/T</th>
                 <th>J/P</th>
+                <th>Intimacy level(1~7)</th>
                 <th>Timestamp</th>
                 <th>Relationship type</th>
-                <th>Intimacy level</th>
                 <th>Frequent interaction place</th>
                 <th>Action</th>
             </tr>
+            <!--  -->
         </thead>
         <tbody id="history-table">
             <!-- 数据将会动态填充 -->
@@ -84,7 +85,12 @@
                             <td>${data.ns}</td>
                             <td>${data.ft}</td>
                             <td>${data.jp}</td>
-                            <td>${new Date(data.timestamp).toLocaleString()}</td>`;
+                            <td>${data.intimacyGraph}</td>
+                            <td>${new Date(data.timestamp).toLocaleDateString([], { month: '2-digit', day: '2-digit' })} 
+    ${new Date(data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</td>
+
+                            `;
+                        // <td>${new D ate(data.timestamp).toLocaleString()}</td>
                         index++;
 
                         /** 🔹 Relationship Type **/
@@ -113,22 +119,22 @@
                         }
                         row.appendChild(relationshipTd);
 
-                        /** 🔹 Intimacy Level **/
-                        const intimacyTd = document.createElement("td");
-                        let intimacySelect;
-                        if (data.intimacyLevel) {
-                            intimacyTd.innerHTML = `<span>${data.intimacyLevel}</span>`;
-                        } else {
-                            intimacySelect = document.createElement("select");
-                            ["", "High", "Medium", "Low"].forEach(optionText => {
-                                const option = document.createElement("option");
-                                option.value = optionText;
-                                option.text = optionText || "Select...";
-                                intimacySelect.appendChild(option);
-                            });
-                            intimacyTd.appendChild(intimacySelect);
-                        }
-                        row.appendChild(intimacyTd);
+                        // /** 🔹 Intimacy Level **/
+                        // const intimacyTd = document.createElement("td");
+                        // let intimacySelect;
+                        // if (data.intimacyLevel) {
+                        //     intimacyTd.innerHTML = `<span>${data.intimacyLevel}</span>`;
+                        // } else {
+                        //     intimacySelect = document.createElement("select");
+                        //     ["", "High", "Medium", "Low"].forEach(optionText => {
+                        //         const option = document.createElement("option");
+                        //         option.value = optionText;
+                        //         option.text = optionText || "Select...";
+                        //         intimacySelect.appendChild(option);
+                        //     });
+                        //     intimacyTd.appendChild(intimacySelect);
+                        // }
+                        // row.appendChild(intimacyTd);
 
                         /** 🔹 Frequent Interaction Place **/
                         const interactionTd = document.createElement("td");
@@ -158,22 +164,24 @@
 
                         /** 🔹 Save Button **/
                         const actionTd = document.createElement("td");
-                        if (!data.relationshipType || !data.intimacyLevel || !data.interactionPlace) {
+                        // if (!data.relationshipType || !data.intimacyLevel || !data.interactionPlace) {
+                        if (!data.relationshipType || !data.interactionPlace) {
                             const saveButton = document.createElement("button");
                             saveButton.textContent = "Save";
 
                             saveButton.addEventListener("click", async () => {
                                 const newRelationship = relationshipSelect?.value === "Other" && relationshipInput?.value.trim() ? relationshipInput.value.trim() : relationshipSelect?.value || "N/A";
-                                const newIntimacy = intimacySelect?.value || "N/A";
+                                // const newIntimacy = intimacySelect?.value || "N/A";
                                 const newInteraction = interactionSelect?.value === "Other" && interactionInput?.value.trim() ? interactionInput.value.trim() : interactionSelect?.value || "N/A";
 
-                                const updatedData = { relationshipType: newRelationship, intimacyLevel: newIntimacy, interactionPlace: newInteraction };
+                                // const updatedData = { relationshipType: newRelationship, intimacyLevel: newIntimacy, interactionPlace: newInteraction };
+                                const updatedData = { relationshipType: newRelationship, interactionPlace: newInteraction };
 
                                 try {
                                     await update(ref(database, `responses/${recordKey}`), updatedData);
                                     alert("Record updated successfully!");
                                     relationshipTd.innerHTML = `<span>${newRelationship}</span>`;
-                                    intimacyTd.innerHTML = `<span>${newIntimacy}</span>`;
+                                    // intimacyTd.innerHTML = `<span>${newIntimacy}</span>`;
                                     interactionTd.innerHTML = `<span>${newInteraction}</span>`;
                                     actionTd.innerHTML = "";
                                 } catch (error) {
