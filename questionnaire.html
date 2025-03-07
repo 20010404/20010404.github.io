@@ -182,7 +182,7 @@
                         const dbRef = ref(database, "responses");
                         await push(dbRef, data);
                         // **断开 Firebase 连接**
-                        firebase.database().goOffline();
+                        // firebase.database().goOffline();
                         // **显示提示**
                         alert("Data has been successfully submitted to Firebase! The page will now close.");
                         // **自动关闭网页**
