@@ -1,0 +1,297 @@
+@import url('https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=PT+Sans&family=PT Sans&display=swap');
+
+
+/* 全局页面居中 */
+body {
+    font-family: "PT Sans", sans-serif;
+    background-color: #f4f8f7;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.graph-selection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.graph-options {
+    display: flex;
+    flex-wrap: wrap;
+    /* 允许换行 */
+    justify-content: center;
+    /* 让图形水平居中 */
+    align-items: center;
+    gap: 3px;
+    margin-bottom: 20px;
+    /* 调整间距 */
+}
+
+.graph {
+    width: 140px;
+    /* 调整图形大小 */
+    height: 80px;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    background: transparent;
+}
+
+.graph svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.graph.selected svg circle {
+    stroke: url(#gradient-border);
+    stroke-width: 3;
+}
+
+/* 确保第 5 个图形仍然能居中 */
+.graph:nth-child(5) {
+    align-self: center;
+}
+
+
+/* 主要容器，表单 & 语言选择 */
+.container {
+    width: 80%;
+    max-width: 900px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-radius: 12px;
+    background-color: rgb(255, 255, 255);
+}
+
+/* 语言切换容器 */
+.language-switcher {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 滑动开关容器 */
+.toggle-container {
+    position: relative;
+    display: flex;
+    margin-top: 10px;
+    box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.1);
+    border-radius: 30px;
+    padding: 5px;
+    width: 75px;
+    height: 25px;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* 隐藏默认单选按钮 */
+.toggle-container input {
+    display: none;
+}
+
+/* 选项按钮样式 */
+.toggle-container label {
+    flex: 1;
+    text-align: center;
+    font-size: 14px;
+    font-weight: bold;
+    color: #5f5c5c;
+    cursor: pointer;
+    z-index: 2;
+}
+
+/* 滑块 */
+.toggle-slider {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    width: 30px;
+    height: 22px;
+    background: #4CAF50;
+    border-radius: 20px;
+    transition: all 0.3s ease-in-out;
+    z-index: 1;
+}
+
+/* 选中状态的样式 */
+.toggle-container input:checked+label {
+    color: rgb(107, 105, 105);
+}
+
+/* 让滑块跟随选项 */
+.toggle-container input#lang-en:checked~.toggle-slider {
+    left: 5px;
+    background: #5EAAA8;
+}
+
+.toggle-container input#lang-zh:checked~.toggle-slider {
+    left: 30px;
+    background: #F4A261;
+}
+
+.toggle-container input#lang-ko:checked~.toggle-slider {
+    left: 55px;
+    background: #7AB2D3;
+}
+
+/* 标题优化 */
+h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: #000000;
+    text-align: center;
+    margin-bottom: 8px;
+    max-width: 700px;
+    /* 设置最大宽度 */
+    margin-left: auto;
+    /* 自动边距用于居中 */
+    margin-right: auto;
+    /* 自动边距用于居中 */
+}
+
+/* 副标题优化 */
+/* 副标题优化 */
+p {
+    font-size: 15px;
+    color: #000000;
+    max-width: 700px;
+    /* 和 form 保持一致 */
+    text-align: left;
+    /* 让文字居中 */
+    margin: 0 auto 15px;
+    /* 上下间距 */
+    line-height: 1.5;
+    /* 增加行间距，提升可读性 */
+    width: 100%;
+}
+
+/* 表单整体 */
+form {
+    width: 100%;
+    max-width: 700px;
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.1);
+    margin-bottom: 50px;
+}
+
+/* 让 form-row 横向排列，保证字体水平对齐 */
+.form-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    /* 让内容均匀分布 */
+    margin-bottom: 12px;
+    width: 100%;
+    gap: 1px;
+    /* 增加间距 */
+}
+
+/* 标签优化 - 让字体左对齐 */
+label {
+    font-size: 15px;
+    font-weight: 500;
+    color: #333;
+    flex-shrink: 0;
+    /* 避免收缩 */
+    width: 200px;
+    /* 固定 Label 宽度，保证对齐 */
+}
+
+/* 让 Tooltip 变小，并贴近 Label */
+.tooltip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 25px;
+    height: 25px;
+    font-size: 12px;
+    color: white;
+    background-color: #5b8591;
+    border-radius: 50%;
+    cursor: pointer;
+    font-weight: bold;
+    position: relative;
+    transition: all 0.2s ease-in-out;
+}
+
+/* 小问号 */
+.tooltip::after {
+    /* 显示问号 */
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* Tooltip 文字信息 */
+.tooltip .tooltip-text {
+    visibility: hidden;
+    width: max-content;
+
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    text-align: center;
+    border-radius: 6px;
+    padding: 6px;
+    font-size: 12px;
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.tooltip:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* 输入框变短，提升美观 */
+input {
+    width: 30%;
+    /* 调整输入框宽度 */
+    max-width: 250px;
+    /* 限制最大宽度 */
+    padding: 8px;
+    font-size: 14px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    outline: none;
+    transition: border 0.3s ease-in-out;
+}
+
+input:focus {
+    border-color: #5EAAA8;
+}
+
+/* 提交按钮优化 */
+button {
+    background: linear-gradient(135deg, #2489b8, #e995b8);
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    display: block;
+    width: 100%;
+    text-align: center;
+    margin-top: 10px;
+}
+
+
+button:hover {
+    background: linear-gradient(135deg, #5EAAA8, #3A7C7A);
+    transform: translateY(-2px);
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
+}
