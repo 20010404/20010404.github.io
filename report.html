@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My MBTI Report</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+    <script src="switch_language.js" defer></script>
+    <link rel="stylesheet" href="style3.css">
+    <style>
+        .chart-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            align-items: center;
+            max-width: 90%;
+            margin: 0 auto;
+        }
+
+        .chart-box {
+            width: 45%;
+            min-width: 300px;
+            min-height: 300px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            padding: 5px 10px;
+            font-size: 14px;
+        }
+
+        .legend-item span {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>My MBTI Report</h1>
+    <p>This report shows the average MBTI perception others have of you.</p>
+
+    <h2>Average MBTI Perception</h2>
+    <p id="average-mbti">Loading...</p>
+
+    <!-- <div id="filters">
+        <label for="relationship-filter">Relationship Type:</label>
+        <select id="relationship-filter">
+            <option value="all">All</option>
+        </select>
+
+        <label for="interaction-filter">FiInteraction Place:</label>
+        <select id="interaction-filter">
+            <option value="all">All</option>
+        </select>
+
+        <label for="familiarity-filter">Familiarity Level:</label>
+        <select id="familiarity-filter">
+            <option value="all">All</option>
+        </select>
+    </div> -->
+    <!-- Legend -->
+    <div id="legend-container" class="legend"></div>
+
+    <div class="chart-container">
+        <div class="chart-box"><canvas id="chartIE"></canvas></div>
+        <div class="chart-box"><canvas id="chartNS"></canvas></div>
+        <div class="chart-box"><canvas id="chartFT"></canvas></div>
+        <div class="chart-box"><canvas id="chartJP"></canvas></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getDatabase, ref, query, orderByChild, equalTo, get } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+
+        let dataPoints = [];
+        let charts = {};
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            console.log("Loading MBTI report...");
+
+            const firebaseConfig = {
+                apiKey: "AIzaSyCvc9C5PuDqrI26jrmsg5b1PVOW6_k43W4",
+                authDomain: "mbti-kale.firebaseapp.com",
+                databaseURL: "https://mbti-kale-default-rtdb.asia-southeast1.firebasedatabase.app",
+                projectId: "mbti-kale",
+                storageBucket: "mbti-kale.firebasestorage.app",
+                messagingSenderId: "756176954275",
+                appId: "1:756176954275:web:7581e5e485e426b33ff016",
+                measurementId: "G-B6F0F4JZ7E"
+            };
+
+            const app = initializeApp(firebaseConfig);
+            const database = getDatabase(app);
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const username = urlParams.get("username");
+
+            if (!username) {
+                alert("Invalid access. No username provided.");
+                window.location.href = "index.html";
+                return;
+            }
+
+            try {
+                const dbRef = ref(database, "responses");
+                const q = query(dbRef, orderByChild("username"), equalTo(username));
+                const snapshot = await get(q);
+
+                if (!snapshot.exists()) {
+                    document.getElementById("average-mbti").textContent = "No data found.";
+                    return;
+                }
+
+                console.log("Data found:", snapshot.val());
+
+                let totalCount = 0;
+                let sumIE = 0, sumNS = 0, sumFT = 0, sumJP = 0;
+                let relationshipTypes = new Set();
+                let interactionPlaces = new Set();
+                let familiarityLevels = new Set();
+
+                snapshot.forEach((childSnapshot) => {
+                    const data = childSnapshot.val();
+                    const familiarity = parseInt(data.intimacyGraph) || 1;
+
+                    sumIE += parseInt(data.ie);
+                    sumNS += parseInt(data.ns);
+                    sumFT += parseInt(data.ft);
+                    sumJP += parseInt(data.jp);
+
+                    dataPoints.push({
+                        IE: parseInt(data.ie),
+                        NS: parseInt(data.ns),
+                        FT: parseInt(data.ft),
+                        JP: parseInt(data.jp),
+                        familiarity: familiarity,
+                        relationship: data.relationshipType || "Unknown",
+                        interaction: data.interactionPlace || "Unknown",
+                        y: Math.random() * 100
+                    });
+
+                    relationshipTypes.add(data.relationshipType || "Unknown");
+                    interactionPlaces.add(data.interactionPlace || "Unknown");
+                    familiarityLevels.add(familiarity);
+                    totalCount++;
+                });
+
+                let avgIE = Math.round(sumIE / totalCount);
+                let avgNS = Math.round(sumNS / totalCount);
+                let avgFT = Math.round(sumFT / totalCount);
+                let avgJP = Math.round(sumJP / totalCount);
+
+                let finalIE = avgIE >= 50 ? "E" : "I";
+                let finalNS = avgNS >= 50 ? "N" : "S";
+                let finalFT = avgFT >= 50 ? "T" : "F";
+                let finalJP = avgJP >= 50 ? "J" : "P";
+
+                // 计算最终百分比
+                let finalIEPercent = finalIE === "E" ? avgIE : 100 - avgIE;
+                let finalNSPercent = finalNS === "N" ? avgNS : 100 - avgNS;
+                let finalFTPercent = finalFT === "T" ? avgFT : 100 - avgFT;
+                let finalJPPercent = finalJP === "J" ? avgJP : 100 - avgJP;
+
+                console.log(username);
+
+                // 在页面上显示最终的 MBTI 结果
+                document.getElementById("average-mbti").textContent = `${finalIE} (${finalIEPercent}%)  ${finalNS} (${finalNSPercent}%)  ${finalFT} (${finalFTPercent}%)  ${finalJP} (${finalJPPercent}%)`;
+
+
+                createLegend(relationshipTypes, interactionPlaces);
+                drawScatterChart("chartIE", "I/E Scale", dataPoints, "IE");
+                drawScatterChart("chartNS", "N/S Scale", dataPoints, "NS");
+                drawScatterChart("chartFT", "F/T Scale", dataPoints, "FT");
+                drawScatterChart("chartJP", "J/P Scale", dataPoints, "JP");
+
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                alert("Failed to load report.");
+            }
+        });
+
+        function createLegend(types, types2) {
+            const legendContainer = document.getElementById("legend-container");
+            legendContainer.innerHTML = "";
+
+            types.forEach(type => {
+                const color = getColorForRelationship(type);
+                const shaple = getShapeForInteraction(type);
+                const legendItem = document.createElement("div");
+                legendItem.className = "legend-item";
+                legendItem.innerHTML = `<span style="background:${color}"></span>${type}`;
+                legendContainer.appendChild(legendItem);
+            });
+        }
+
+        function getColorForRelationship(relationship) {
+            const colors = {
+                "Friend": "#A3C1AD",
+                "Family": "#EAC4D5",
+                "Colleague": "#C3B1E1",
+                "Romantic": "#F4A460",
+                "Unknown": "#B3B3B3"
+            };
+            return colors[relationship] || "#777777";
+        }
+
+        function getShapeForInteraction(interaction) {
+            const shapes = {
+                "Online": "circle",
+                "Work": "triangle",
+                "School": "rect",
+                "Home": "star",
+                "Cafe": "diamond",
+                "Sports": "cross"
+            };
+            return shapes[interaction] || "circle";
+        }
+
+        function drawScatterChart(canvasId, label, data, key) {
+            const ctx = document.getElementById(canvasId).getContext("2d");
+
+            const chartData = data.map(d => ({
+                x: d[key],
+                y: d.y,
+                r: d.familiarity * 2
+            }));
+
+            if (charts[canvasId]) {
+                charts[canvasId].destroy();
+            }
+
+            charts[canvasId] = new Chart(ctx, {
+                type: "scatter",
+                data: {
+                    datasets: [{
+                        label: label,
+                        data: chartData,
+                        backgroundColor: data.map(d => getColorForRelationship(d.relationship))
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: { x: { min: 0, max: 100, title: { display: true, text: label } } }
+                }
+            });
+        }
+    </script>
+</body>
+
+</html>

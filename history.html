@@ -33,11 +33,17 @@
             <!-- 数据将会动态填充 -->
         </tbody>
     </table>
+    <!-- My Report 按钮 -->
+    <div id="report-container" style="text-align: center; margin-top: 20px; display: none;">
+        <button id="report-btn"
+            style="padding: 10px 20px; font-size: 16px; background: linear-gradient(135deg, #2489b8, #e995b8); color: white; border: none; border-radius: 8px; cursor: pointer;">My
+            Report</button>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
         import { getDatabase, ref, query, orderByChild, equalTo, get, update } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
-
+        let username;
         document.addEventListener("DOMContentLoaded", async () => {
             console.log("Loading history...");
             const firebaseConfig = {
@@ -72,8 +78,11 @@
                     console.log("Data found:", snapshot.val());
                     const tableBody = document.getElementById("history-table");
                     let index = 1;
+                    let totalRecords = 0;
+                    let savedRecords = 0;
 
                     snapshot.forEach((childSnapshot) => {
+                        totalRecords++;
                         const data = childSnapshot.val();
                         const recordKey = childSnapshot.key;
 
@@ -90,7 +99,6 @@
     ${new Date(data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</td>
 
                             `;
-                        // <td>${new D ate(data.timestamp).toLocaleString()}</td>
                         index++;
 
                         /** 🔹 Relationship Type **/
@@ -98,6 +106,7 @@
                         let relationshipSelect, relationshipInput;
                         if (data.relationshipType) {
                             relationshipTd.innerHTML = `<span>${data.relationshipType}</span>`;
+                            savedRecords++;
                         } else {
                             relationshipSelect = document.createElement("select");
                             relationshipInput = document.createElement("input");
@@ -119,28 +128,12 @@
                         }
                         row.appendChild(relationshipTd);
 
-                        // /** 🔹 Intimacy Level **/
-                        // const intimacyTd = document.createElement("td");
-                        // let intimacySelect;
-                        // if (data.intimacyLevel) {
-                        //     intimacyTd.innerHTML = `<span>${data.intimacyLevel}</span>`;
-                        // } else {
-                        //     intimacySelect = document.createElement("select");
-                        //     ["", "High", "Medium", "Low"].forEach(optionText => {
-                        //         const option = document.createElement("option");
-                        //         option.value = optionText;
-                        //         option.text = optionText || "Select...";
-                        //         intimacySelect.appendChild(option);
-                        //     });
-                        //     intimacyTd.appendChild(intimacySelect);
-                        // }
-                        // row.appendChild(intimacyTd);
-
                         /** 🔹 Frequent Interaction Place **/
                         const interactionTd = document.createElement("td");
                         let interactionSelect, interactionInput;
                         if (data.interactionPlace) {
                             interactionTd.innerHTML = `<span>${data.interactionPlace}</span>`;
+                            savedRecords++;
                         } else {
                             interactionSelect = document.createElement("select");
                             interactionInput = document.createElement("input");
@@ -184,6 +177,8 @@
                                     // intimacyTd.innerHTML = `<span>${newIntimacy}</span>`;
                                     interactionTd.innerHTML = `<span>${newInteraction}</span>`;
                                     actionTd.innerHTML = "";
+                                    savedRecords++;
+                                    checkAndShowReportButton(totalRecords, savedRecords / 2);
                                 } catch (error) {
                                     console.error("Update error:", error);
                                     alert("Failed to update record: " + error.message);
@@ -195,6 +190,7 @@
 
                         row.appendChild(actionTd);
                         tableBody.appendChild(row);
+                        checkAndShowReportButton(totalRecords, savedRecords / 2);
                     });
                 }
             } catch (error) {
@@ -202,6 +198,29 @@
                 alert("Failed to load history.");
             }
         });
+
+        function checkAndShowReportButton(total, saved) {
+            console.log(`Total records: ${total}, Saved records: ${saved}`);
+
+            if (total >= 10 && total === saved) {
+                const reportContainer = document.getElementById("report-container");
+                const reportBtn = document.getElementById("report-btn");
+
+                // **显示 My Report 按钮**
+                reportContainer.style.display = "block";
+
+                // **防止重复绑定事件**
+                reportBtn.onclick = () => {
+                    const baseUrl = window.location.hostname === '127.0.0.1' ?
+                        'http://127.0.0.1:5500' : window.location.origin;
+
+                    console.log(`Navigating to: ${baseUrl}/report.html?username=${encodeURIComponent(username)}`);
+                    window.location.href = `${baseUrl}/report.html?username=${encodeURIComponent(username)}`;
+                    console.log("Navigating to: ...")
+                };
+            }
+        }
+
     </script>
 </body>
 
