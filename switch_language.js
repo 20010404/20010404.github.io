@@ -1,9 +1,9 @@
 const translations = {
     en: {
-        title: "MBTI Questionnaire  - ",
-        introduction: "This is an MBTI perception form; you can answer how you perceive him/her in 4 different aspects according to real-life interactions.",
-        email: "Your email or nickname:",
-        relation: "Please choose the graph that best describes your relationship closeness with",
+        title: "'s MBTI Questionnaire ",
+        introduction: " According to real-life interactions ,you can answer with 4 different dimensions from MBTI to describe how you perceive ",
+        email: "Your given name",
+        relation: "Please choose the graph that best describes your familiarity",
         ie: "I/E Percentage:",
         ieTooltip: "I: Introversion, E: Extraversion",
         ns: "N/S Percentage:",
@@ -15,10 +15,10 @@ const translations = {
         submit: "Submit"
     },
     zh: {
-        title: "MBTI问卷 -",
-        introduction: "这是一个 MBTI 感知表单，您可以根据现实生活中的互动，回答您对他/她的 4 个方面的看法。",
-        email: "您的邮箱或昵称：",
-        relation: "请选择最能体现您俩关系亲密程度的图片-您与",
+        title: "的MBTI问卷",
+        introduction: "根据实际生活中的互动，你可以用MBTI的四个不同维度来回答，描述你如何感知",
+        email: "您的名",
+        relation: "请选择最能体现您對他的熟悉程度的圖",
         ie: "I/E 百分比：",
         ieTooltip: "I: 内向, E: 外向",
         ns: "N/S 百分比：",
@@ -30,9 +30,9 @@ const translations = {
         submit: "提交"
     },
     ko: {
-        title: "MBTI 설문지 -",
-        introduction: "이것은 MBTI 인식 설문지입니다. 실제 생활 상호작용을 기반으로 그/그녀를 어떻게 인식하는지 4가지 측면에서 답변할 수 있습니다.",
-        email: "이메일 또는 닉네임:",
+        title: "의MBTI 설문지",
+        introduction: "MBTI의 4가지 차원을 사용하여 실제 상호작용을 기반으로 어떻게 인식하는지 설명할 수 있습니다, ",
+        email: "당신의 이름:",
         relation: "가장 두 분의 친밀한 관계를 잘 나타내는 사진을 선택해 주세요 - 당신과",
         ie: "I/E 퍼센트:",
         ieTooltip: "I: 내향, E: 외향",
@@ -60,9 +60,10 @@ function changeLanguage(lang) {
 
     // **✅ 只更新 "MBTI Questionnaire for"，不修改 username**
     const username = document.getElementById("username").textContent;
-    document.getElementById("form-title").innerHTML = `${translation.title} <span id="username">${username}</span>`;
+    document.getElementById("form-title").innerHTML = `<span id="username">${username}</span>${translation.title} `;
     // **更新其他内容**
-    document.getElementById("introduction").textContent = translation.introduction;
+    // document.getElementById("introduction").textContent = translation.introduction;
+    document.getElementById("introduction").innerHTML = `${translation.introduction}<span id="username">${username}</span>.`;
     document.getElementById("label-email").textContent = translation.email;
     document.getElementById("relation").innerHTML = `${translation.relation} <span id="username">${username}</span>`;
 
