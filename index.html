@@ -97,17 +97,15 @@
                     "다른 사람들이 제 MBTI를 어떻게 인식하는지에 대한 연구입니다. " +
                     "그리고 저는 당신이 저를 어떤 유형의 MBTI라고 생각하는지 알고 싶습니다.\n\n" +
                     "[中文] 您好，我们正在进行用户研究。这是一项关于其他人如何看待我的 MBTI 的研究，" +
-                    "我想知道您认为我属于哪种 MBTI 类型。\n\n",
-                buttons: [
-                    {
-                        title: 'Open Questionnaire',
-                        link: {
-                            mobileWebUrl: questionnaireUrl,
-                            webUrl: questionnaireUrl
-                        }
-                    }
-                ]
+                    "我想知道您认为我属于哪种 MBTI 类型。\n\n Click👇",
+
+                link: {
+                    mobileWebUrl: questionnaireUrl,
+                    webUrl: questionnaireUrl
+                }
+
             });
+
 
             document.getElementById('share-btn').addEventListener('click', () => {
                 const username = document.getElementById('username').value.trim();
