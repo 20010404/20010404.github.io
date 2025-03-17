@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Quicksand:wght@400;600&display=swap');
+
 body {
     font-family: "Poppins", sans-serif;
     background-color: #f4f8f7;
@@ -9,7 +11,6 @@ body {
     /* 让内容从左侧开始 */
 }
 
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Quicksand:wght@400;600&display=swap');
 
 /* 🔹 美化下拉框的基础样式 */
 select {

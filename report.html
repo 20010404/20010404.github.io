@@ -6,6 +6,393 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My MBTI Report</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="switch_language.js" defer></script>
+    <link rel="stylesheet" href="style3.css">
+    <style>
+        .chart-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            max-width: 90%;
+            margin: 0 auto;
+        }
+
+        .chart-box {
+            width: 45%;
+            min-width: 300px;
+            min-height: 250px;
+        }
+
+        canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        .filters {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>My MBTI Report</h1>
+    <p>This report shows the average MBTI perception others have of you.</p>
+
+    <h2>Average MBTI Perception</h2>
+    <p id="average-mbti">Loading...</p>
+
+    <div class="filters">
+        <label for="relationship-filter">Filter by Relationship Type:</label>
+        <select id="relationship-filter">
+            <option value="all">All</option>
+        </select>
+
+        <label for="interaction-filter">Filter by Interaction Place:</label>
+        <select id="interaction-filter">
+            <option value="all">All</option>
+        </select>
+
+        <label for="familiarity-filter">Filter by Familiarity Level:</label>
+        <select id="familiarity-filter">
+            <option value="all">All</option>
+        </select>
+    </div>
+
+    <div class="chart-container">
+        <div class="chart-box"><canvas id="chartIE"></canvas></div>
+        <div class="chart-box"><canvas id="chartNS"></canvas></div>
+        <div class="chart-box"><canvas id="chartFT"></canvas></div>
+        <div class="chart-box"><canvas id="chartJP"></canvas></div>
+    </div>
+
+</body>
+
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+    import { getDatabase, ref, query, orderByChild, equalTo, get } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyCvc9C5PuDqrI26jrmsg5b1PVOW6_k43W4",
+        authDomain: "mbti-kale.firebaseapp.com",
+        databaseURL: "https://mbti-kale-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "mbti-kale",
+        storageBucket: "mbti-kale.firebasestorage.app",
+        messagingSenderId: "756176954275",
+        appId: "1:756176954275:web:7581e5e485e426b33ff016",
+        measurementId: "G-B6F0F4JZ7E"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+    const urlParams = new URLSearchParams(window.location.search);
+    const username = urlParams.get("username");
+
+    if (!username) {
+        alert("Invalid access.");
+        window.location.href = "index.html";
+    }
+
+    let dataPoints = [];
+    let charts = {};
+
+    async function fetchData() {
+        const dbRef = ref(database, "responses");
+        const q = query(dbRef, orderByChild("username"), equalTo(username));
+        const snapshot = await get(q);
+        if (!snapshot.exists()) {
+            document.getElementById("average-mbti").textContent = "No data found.";
+            return;
+        }
+
+        let totalCount = 0, sumIE = 0, sumNS = 0, sumFT = 0, sumJP = 0;
+        snapshot.forEach((childSnapshot) => {
+            const data = childSnapshot.val();
+            dataPoints.push({
+                IE: parseInt(data.ie), NS: parseInt(data.ns),
+                FT: parseInt(data.ft), JP: parseInt(data.jp),
+                familiarity: parseInt(data.intimacyGraph) || 1,
+                relationship: data.relationshipType || "Unknown",
+                interaction: data.interactionPlace || "Unknown"
+            });
+            totalCount++;
+            sumIE += parseInt(data.ie);
+            sumNS += parseInt(data.ns);
+            sumFT += parseInt(data.ft);
+            sumJP += parseInt(data.jp);
+        });
+
+        let avgIE = Math.round(sumIE / totalCount);
+        let avgNS = Math.round(sumNS / totalCount);
+        let avgFT = Math.round(sumFT / totalCount);
+        let avgJP = Math.round(sumJP / totalCount);
+
+        let finalIE = avgIE >= 50 ? "E" : "I";
+        let finalNS = avgNS >= 50 ? "N" : "S";
+        let finalFT = avgFT >= 50 ? "T" : "F";
+        let finalJP = avgJP >= 50 ? "J" : "P";
+
+        // 计算最终百分比
+        let finalIEPercent = finalIE === "E" ? avgIE : 100 - avgIE;
+        let finalNSPercent = finalNS === "N" ? avgNS : 100 - avgNS;
+        let finalFTPercent = finalFT === "T" ? avgFT : 100 - avgFT;
+        let finalJPPercent = finalJP === "J" ? avgJP : 100 - avgJP;
+
+        console.log(username);
+
+        // 在页面上显示最终的 MBTI 结果
+        document.getElementById("average-mbti").textContent = `${finalIE} (${finalIEPercent}%)  ${finalNS} (${finalNSPercent}%)  ${finalFT} (${finalFTPercent}%)  ${finalJP} (${finalJPPercent}%)`;
+
+        updateCharts();
+    }
+
+    function updateCharts() {
+        ["IE", "NS", "FT", "JP"].forEach(scale => {
+            drawScaleChart(`chart${scale}`, scale, dataPoints, scale);
+        });
+    }
+
+    function drawScaleChart(canvasId, key, data, label) {
+        const ctx = document.getElementById(canvasId).getContext("2d");
+        if (charts[canvasId]) charts[canvasId].destroy();
+
+        charts[canvasId] = new Chart(ctx, {
+            type: "scatter",
+            data: {
+                datasets: [{
+                    label: label,
+                    data: data.map(d => ({
+                        x: d[key] >= 50 ? d[key] : 100 - d[key],
+                        y: Math.random() * 20 + 40, // Y轴范围缩小
+                        r: d.familiarity * 10 * 1.25
+                    })),
+                    backgroundColor: data.map(d => getColorForRelationship(d.relationship)),
+                    pointStyle: data.map(d => getShapeForInteraction(d.interaction)),
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } }, // 隐藏 "I/E Scale" 标签
+                scales: {
+                    x: {
+                        min: 0,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: getAxisLabel(label) // 自定义 x 轴标签
+                        }
+                    },
+                    y: { display: false } // Y轴隐藏
+                }
+            }
+        });
+    }
+
+    function getAxisLabel(type) {
+        return {
+            "IE": "I ←→ E",
+            "NS": "N ←→ S",
+            "FT": "F ←→ T",
+            "JP": "J ←→ P"
+        }[type];
+    }
+
+    function getColorForRelationship(type) {
+        return {
+            "Friend": "#A3C4BC",
+            "Family": "#E4C1F9",
+            "Colleague": "#F4A261",
+            "Romantic": "#E76F51",
+            "Unknown": "#BDBDBD"
+        }[type] || "black";
+    }
+
+    function getShapeForInteraction(place) {
+        return {
+            "Online": "circle",
+            "Work": "triangle",
+            "School": "rect",
+            "Cafe": "star",
+            "Sports": "cross"
+        }[place] || "rectRot";
+    }
+
+    document.getElementById("relationship-filter").addEventListener("change", updateCharts);
+    document.getElementById("interaction-filter").addEventListener("change", updateCharts);
+    document.getElementById("familiarity-filter").addEventListener("change", updateCharts);
+
+    fetchData();
+</script>
+
+</html>
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My MBTI Report</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="switch_language.js" defer></script>
+    <link rel="stylesheet" href="style3.css">
+    <style>
+        .chart-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            max-width: 90%;
+            margin: 0 auto;
+        }
+
+        .chart-box {
+            width: 45%;
+            min-width: 300px;
+            min-height: 300px;
+        }
+
+        canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        .filters {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>My MBTI Report</h1>
+    <p>This report shows the average MBTI perception others have of you.</p>
+
+    <h2>Average MBTI Perception</h2>
+    <p id="average-mbti">Loading...</p>
+
+    <div class="filters">
+        <label for="relationship-filter">Filter by Relationship Type:</label>
+        <select id="relationship-filter">
+            <option value="all">All</option>
+        </select>
+
+        <label for="interaction-filter">Filter by Interaction Place:</label>
+        <select id="interaction-filter">
+            <option value="all">All</option>
+        </select>
+
+        <label for="familiarity-filter">Filter by Familiarity Level:</label>
+        <select id="familiarity-filter">
+            <option value="all">All</option>
+        </select>
+    </div>
+
+    <div class="chart-container">
+        <div class="chart-box"><canvas id="chartIE"></canvas></div>
+        <div class="chart-box"><canvas id="chartNS"></canvas></div>
+        <div class="chart-box"><canvas id="chartFT"></canvas></div>
+        <div class="chart-box"><canvas id="chartJP"></canvas></div>
+    </div>
+
+
+</body>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+    import { getDatabase, ref, query, orderByChild, equalTo, get } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyCvc9C5PuDqrI26jrmsg5b1PVOW6_k43W4",
+        authDomain: "mbti-kale.firebaseapp.com",
+        databaseURL: "https://mbti-kale-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "mbti-kale",
+        storageBucket: "mbti-kale.firebasestorage.app",
+        messagingSenderId: "756176954275",
+        appId: "1:756176954275:web:7581e5e485e426b33ff016",
+        measurementId: "G-B6F0F4JZ7E"
+    };
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+    const urlParams = new URLSearchParams(window.location.search);
+    let username = urlParams.get("username");
+    console.log("Extracted Username:", username);
+    if (!username) { alert("Invalid access."); window.location.href = "index.html"; }
+
+    let dataPoints = [];
+    let charts = {};
+
+    async function fetchData() {
+        const dbRef = ref(database, "responses");
+        const q = query(dbRef, orderByChild("username"), equalTo(username));
+        const snapshot = await get(q);
+        if (!snapshot.exists()) { document.getElementById("average-mbti").textContent = "No data found."; return; }
+
+        let totalCount = 0, sumIE = 0, sumNS = 0, sumFT = 0, sumJP = 0;
+        snapshot.forEach((childSnapshot) => {
+            const data = childSnapshot.val();
+            dataPoints.push({
+                IE: parseInt(data.ie), NS: parseInt(data.ns),
+                FT: parseInt(data.ft), JP: parseInt(data.jp),
+                familiarity: parseInt(data.intimacyGraph) || 1,
+                relationship: data.relationshipType || "Unknown",
+                interaction: data.interactionPlace || "Unknown"
+            });
+            totalCount++;
+            sumIE += parseInt(data.ie); sumNS += parseInt(data.ns);
+            sumFT += parseInt(data.ft); sumJP += parseInt(data.jp);
+        });
+
+        document.getElementById("average-mbti").textContent = `E/I: ${sumIE / totalCount}%  N/S: ${sumNS / totalCount}%  T/F: ${sumFT / totalCount}%  J/P: ${sumJP / totalCount}%`;
+        updateCharts();
+    }
+
+    function updateCharts() {
+        ["IE", "NS", "FT", "JP"].forEach(scale => {
+            drawScaleChart(`chart${scale}`, `${scale} Scale`, dataPoints, scale);
+        });
+    }
+
+    function drawScaleChart(canvasId, label, data, key) {
+        const ctx = document.getElementById(canvasId).getContext("2d");
+        if (charts[canvasId]) charts[canvasId].destroy();
+        charts[canvasId] = new Chart(ctx, {
+            type: "scatter",
+            data: {
+                datasets: [{
+                    label: label, data: data.map(d => ({ x: d[key], y: Math.random() * 100, r: d.familiarity * 2 })),
+                    backgroundColor: data.map(d => getColorForRelationship(d.relationship)),
+                    pointStyle: data.map(d => getShapeForInteraction(d.interaction)),
+                }]
+            },
+            options: { responsive: true, scales: { x: { min: 0, max: 100 }, y: { display: false } } }
+        });
+    }
+
+    function getColorForRelationship(type) {
+        return { "Friend": "#A3C4BC", "Family": "#E4C1F9", "Colleague": "#F4A261", "Romantic": "#E76F51", "Unknown": "#BDBDBD" }[type] || "black";
+    }
+
+    function getShapeForInteraction(place) {
+        return { "Online": "circle", "Work": "triangle", "School": "rect", "Cafe": "star", "Sports": "cross" }[place] || "rectRot";
+    }
+
+    document.getElementById("relationship-filter").addEventListener("change", updateCharts);
+    document.getElementById("interaction-filter").addEventListener("change", updateCharts);
+    document.getElementById("familiarity-filter").addEventListener("change", updateCharts);
+
+    fetchData();
+</script>
+
+</html> -->
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My MBTI Report</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
     <script src="switch_language.js" defer></script>
     <link rel="stylesheet" href="style3.css">
@@ -65,23 +452,6 @@
     <h2>Average MBTI Perception</h2>
     <p id="average-mbti">Loading...</p>
 
-    <!-- <div id="filters">
-        <label for="relationship-filter">Relationship Type:</label>
-        <select id="relationship-filter">
-            <option value="all">All</option>
-        </select>
-
-        <label for="interaction-filter">FiInteraction Place:</label>
-        <select id="interaction-filter">
-            <option value="all">All</option>
-        </select>
-
-        <label for="familiarity-filter">Familiarity Level:</label>
-        <select id="familiarity-filter">
-            <option value="all">All</option>
-        </select>
-    </div> -->
-    <!-- Legend -->
     <div id="legend-container" class="legend"></div>
 
     <div class="chart-container">
@@ -269,4 +639,4 @@
     </script>
 </body>
 
-</html>
+</html> -->
