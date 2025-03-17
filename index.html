@@ -120,171 +120,54 @@
                     }
                 ]
             });
+        });
 
-            //     Kakao.Link.sendDefault({
-            //         objectType: 'feed',
-            //         content: {
-            //             title: 'MBTI study/연구/研究',
-            //             description: "[English]Hi, we are conducting a user study. It's about how different people perceive my MBTI. And I would like to know what type of MBTI you think I am. [한국어]안녕하세요, 저희는 사용자 연구를 진행하고 있습니다. 다른 사람들이 제 MBTI를 어떻게 인식하는지에 대한 연구입니다. 그리고 저는 당신이 저를 어떤 유형의 MBTI라고 생각하는지 알고 싶습니다.[中文]您好，我们正在进行用户研究。这是一项关于其他人如何看待我的 MBTI 的研究，我想知道您认为我属于哪种 MBTI 类型。",
-            //             imageUrl: 'https://your-image-url.com/image.png',
-            //             link: {
-            //                 mobileWebUrl: questionnaireUrl,
-            //                 webUrl: questionnaireUrl
-            //             }
-            //         },
-            //         buttons: [
-            //             {
-            //                 title: 'Open Questionnaire',
-            //                 link: {
-            //                     mobileWebUrl: questionnaireUrl,
-            //                     webUrl: questionnaireUrl
-            //                 }
-            //             }
-            //         ]
-            //     });
-            // });
+        document.getElementById('share-btn').addEventListener('click', () => {
+            const username = document.getElementById('username').value.trim();
+            if (username === "") {
+                alert("Please enter a username.");
+                return;
+            }
+            const baseUrl = window.location.hostname === '127.0.0.1' ?
+                'http://127.0.0.1:5500' :
+                window.location.origin;
 
-            // document.getElementById('copy-btn').addEventListener('click', () => {
-            //     const username = document.getElementById('username').value.trim();
-            //     if (username === "") {
-            //         alert("Please enter a username.");
-            //         return;
-            //     }
-            //     const baseUrl = window.location.hostname === '127.0.0.1' ?
-            //         'http://127.0.0.1:5500' :
-            //         window.location.origin;
+            const questionnaireUrl = `${baseUrl}/questionnaire.html?username=${encodeURIComponent(username)}`;
 
-            //     const questionnaireUrl = `${baseUrl}/questionnaire.html?username=${encodeURIComponent(username)}`;
-
-            //     const tempInput = document.createElement('input');
-            //     tempInput.value = questionnaireUrl;
-            //     document.body.appendChild(tempInput);
-            //     tempInput.select();
-            //     document.execCommand('copy');
-            //     document.body.removeChild(tempInput);
-
-            //     alert(`The questionnaire link has been copied!`);
-            // });
-
-            document.getElementById('share-btn').addEventListener('click', () => {
-                const username = document.getElementById('username').value.trim();
-                if (username === "") {
-                    alert("Please enter a username.");
-                    return;
-                }
-                const baseUrl = window.location.hostname === '127.0.0.1' ?
-                    'http://127.0.0.1:5500' :
-                    window.location.origin;
-
-                const questionnaireUrl = `${baseUrl}/questionnaire.html?username=${encodeURIComponent(username)}`;
-
-                // 检测浏览器是否支持 Web Share API
-                if (navigator.share) {
-                    navigator.share({
-                        title: "MBTI Questionnaire",
-                        text: `Hey! Here’s your MBTI questionnaire link:`,
-                        url: questionnaireUrl
-                    }).then(() => {
-                        console.log('Link shared successfully');
-                    }).catch((error) => {
-                        console.error('Error sharing:', error);
-                    });
-                } else {
-                    // 兼容方案：弹出手动分享选项
-                    const shareOptions = `
+            // 检测浏览器是否支持 Web Share API
+            if (navigator.share) {
+                navigator.share({
+                    title: "MBTI Questionnaire",
+                    text: `Hey! Here’s your MBTI questionnaire link:`,
+                    url: questionnaireUrl
+                }).then(() => {
+                    console.log('Link shared successfully');
+                }).catch((error) => {
+                    console.error('Error sharing:', error);
+                });
+            } else {
+                // 兼容方案：弹出手动分享选项
+                const shareOptions = `
                     Copy the link manually: ${questionnaireUrl}
                     Or share via:
                     - WeChat: Open WeChat and paste the link
                     - WhatsApp: <a href="https://wa.me/?text=${encodeURIComponent(questionnaireUrl)}" target="_blank">Click here</a>
                     - Email: <a href="mailto:?subject=MBTI Questionnaire&body=${encodeURIComponent(questionnaireUrl)}">Click to send email</a>
                 `;
-                    alert(shareOptions);
-                }
-            });
+                alert(shareOptions);
+            }
+        });
 
-            document.getElementById('history-btn').addEventListener('click', () => {
-                const username = document.getElementById('username').value.trim();
-                if (username === "") {
-                    alert("Please enter a username.");
-                    return;
-                }
-                window.location.href = `history.html?username=${encodeURIComponent(username)}`;
-            });
-
+        document.getElementById('history-btn').addEventListener('click', () => {
+            const username = document.getElementById('username').value.trim();
+            if (username === "") {
+                alert("Please enter a username.");
+                return;
+            }
+            window.location.href = `history.html?username=${encodeURIComponent(username)}`;
+        }); 
     </script>
 
 </body>
 
 </html>
-
-
-// <!-- <!DOCTYPE html>
-// <html lang="en">
-
-// <head>
-//     <meta charset="UTF-8">
-//     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-//     <title>MBTI Questionnaire Link</title>
-//     <script src="switch_language.js" defer></script>
-//     <link rel="stylesheet" href="style.css">
-// </head>
-
-// <body>
-
-//     <div class="container">
-//         左侧表单 
-// <div class="form-container">
-//     <h1>MBTI Login Page</h1>
-//     <div class="form-row">
-//         <!-- <label for="username">Input your name</label> 
-//         <input type="text" id="username" name="username" placeholder="Your unique username" required>
-//     </div>
-
-//     <div class="button-container">
-//         <button id="copy-btn">Copy Link</button>
-//         <button id="history-btn">My History</button>
-//     </div>
-// </div>
-
-// <!-- 右侧插图 
-// <div class="image-container">
-//     <!-- 这里留空，后续填充插图 
-// </div>
-// </div>
-
-// <script>
-//     document.getElementById('copy-btn').addEventListener('click', () => {
-//         const username = document.getElementById('username').value.trim();
-//         if (username === "") {
-//             alert("Please enter a username.");
-//             return;
-//         }
-//         const baseUrl = window.location.hostname === '127.0.0.1' ?
-//             'http://127.0.0.1:5500' :
-//             window.location.origin;
-
-//         const questionnaireUrl = `${baseUrl}/questionnaire.html?username=${encodeURIComponent(username)}`;
-
-//         const tempInput = document.createElement('input');
-//         tempInput.value = questionnaireUrl;
-//         document.body.appendChild(tempInput);
-//         tempInput.select();
-//         document.execCommand('copy');
-//         document.body.removeChild(tempInput);
-
-//         alert(`The questionnaire link has been copied!`);
-//     });
-
-//     document.getElementById('history-btn').addEventListener('click', () => {
-//         const username = document.getElementById('username').value.trim();
-//         if (username === "") {
-//             alert("Please enter a username.");
-//             return;
-//         }
-//         window.location.href = `history.html?username=${encodeURIComponent(username)}`;
-//     });
-// </script>
-
-// </body>
-
-// </html> -->
