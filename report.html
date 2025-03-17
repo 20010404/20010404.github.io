@@ -105,50 +105,140 @@
             return;
         }
 
-        let totalCount = 0, sumIE = 0, sumNS = 0, sumFT = 0, sumJP = 0;
+        let totalCount = 0;
+        let sumI = 0, sumE = 0, sumN = 0, sumS = 0, sumF = 0, sumT = 0, sumJ = 0, sumP = 0;
+        let relationshipTypes = new Set();
+        dataPoints = [];
+        let interactionPlaces = new Set();
+        let familiarityLevels = new Set();
         snapshot.forEach((childSnapshot) => {
             const data = childSnapshot.val();
+
+            function parseMBTI(value) {
+                let percent = parseInt(value.replace(/[^0-9]/g, ""), 10); // 解析数值
+                let type = value.replace(/[0-9%]/g, "").trim(); // 解析类型
+                return { percent, type };
+            }
+
+            let ieData = parseMBTI(data.ie);
+            let nsData = parseMBTI(data.ns);
+            let ftData = parseMBTI(data.ft);
+            let jpData = parseMBTI(data.jp);
+            let ieValue = ieData.type === "I" ? 50 - (ieData.percent / 2) : 50 + (ieData.percent / 2);
+            let nsValue = nsData.type === "N" ? 50 - (nsData.percent / 2) : 50 + (nsData.percent / 2);
+            let ftValue = ftData.type === "F" ? 50 - (ftData.percent / 2) : 50 + (ftData.percent / 2);
+            let jpValue = jpData.type === "J" ? 50 - (jpData.percent / 2) : 50 + (jpData.percent / 2);
+
+            // Add to dataset
             dataPoints.push({
-                IE: parseInt(data.ie), NS: parseInt(data.ns),
-                FT: parseInt(data.ft), JP: parseInt(data.jp),
+                IE: ieValue,
+                NS: nsValue,
+                FT: ftValue,
+                JP: jpValue,
                 familiarity: parseInt(data.intimacyGraph) || 1,
-                relationship: data.relationshipType || "Unknown",
-                interaction: data.interactionPlace || "Unknown"
+                relationship: data.relationshipType || "Other",
+                interaction: data.interactionPlace || "Other"
             });
+            // 累计 I/E
+            if (ieData.type === "I") sumI += ieData.percent;
+            else sumE += ieData.percent;
+
+            // 累计 N/S
+            if (nsData.type === "N") sumN += nsData.percent;
+            else sumS += nsData.percent;
+
+            // 累计 F/T
+            if (ftData.type === "T") sumT += ftData.percent;
+            else sumF += ftData.percent;
+
+            // 累计 J/P
+            if (jpData.type === "J") sumJ += jpData.percent;
+            else sumP += jpData.percent;
+
+
             totalCount++;
-            sumIE += parseInt(data.ie);
-            sumNS += parseInt(data.ns);
-            sumFT += parseInt(data.ft);
-            sumJP += parseInt(data.jp);
         });
 
-        let avgIE = Math.round(sumIE / totalCount);
-        let avgNS = Math.round(sumNS / totalCount);
-        let avgFT = Math.round(sumFT / totalCount);
-        let avgJP = Math.round(sumJP / totalCount);
-
-        let finalIE = avgIE >= 50 ? "E" : "I";
-        let finalNS = avgNS >= 50 ? "N" : "S";
-        let finalFT = avgFT >= 50 ? "T" : "F";
-        let finalJP = avgJP >= 50 ? "J" : "P";
-
         // 计算最终百分比
-        let finalIEPercent = finalIE === "E" ? avgIE : 100 - avgIE;
-        let finalNSPercent = finalNS === "N" ? avgNS : 100 - avgNS;
-        let finalFTPercent = finalFT === "T" ? avgFT : 100 - avgFT;
-        let finalJPPercent = finalJP === "J" ? avgJP : 100 - avgJP;
+        let avgI = sumI / totalCount;
+        let avgE = sumE / totalCount;
+        let avgN = sumN / totalCount;
+        let avgS = sumS / totalCount;
+        let avgF = sumF / totalCount;
+        let avgT = sumT / totalCount;
+        let avgJ = sumJ / totalCount;
+        let avgP = sumP / totalCount;
 
-        console.log(username);
+        // 判断最终类型
+        let finalIE = avgE >= avgI ? "E" : "I";
+        let finalNS = avgN >= avgS ? "N" : "S";
+        let finalFT = avgT >= avgF ? "T" : "F";
+        let finalJP = avgJ >= avgP ? "J" : "P";
 
-        // 在页面上显示最终的 MBTI 结果
-        document.getElementById("average-mbti").textContent = `${finalIE} (${finalIEPercent}%)  ${finalNS} (${finalNSPercent}%)  ${finalFT} (${finalFTPercent}%)  ${finalJP} (${finalJPPercent}%)`;
+        // 计算最终胜出的百分比
+        let finalIEPercent = finalIE === "E" ? avgE + 100 / totalCount - avgI : avgI + 100 / totalCount - avgE;
+        let finalNSPercent = finalNS === "N" ? avgN + 100 / totalCount - avgS : avgS + 100 / totalCount - avgN;
+        let finalFTPercent = finalFT === "T" ? avgT + 100 / totalCount - avgF : avgF + 100 / totalCount - avgT;
+        let finalJPPercent = finalJP === "J" ? avgJ + 100 / totalCount - avgP : avgP + 100 / totalCount - avgJ;
 
+        // 显示最终的 MBTI 结果，保留两位小数
+        document.getElementById("average-mbti").textContent =
+            `${finalIE} (${finalIEPercent.toFixed(2)}%)  
+     ${finalNS} (${finalNSPercent.toFixed(2)}%)  
+     ${finalFT} (${finalFTPercent.toFixed(2)}%)  
+     ${finalJP} (${finalJPPercent.toFixed(2)}%)`;
+        populateFilterDropdowns(relationshipTypes, interactionPlaces, familiarityLevels);
         updateCharts();
     }
+    function populateFilterDropdowns() {
+        const relationshipFilter = document.getElementById("relationship-filter");
+        const interactionFilter = document.getElementById("interaction-filter");
+        const familiarityFilter = document.getElementById("familiarity-filter");
 
+        // Clear existing options except "All"
+        relationshipFilter.innerHTML = '<option value="all">All</option>';
+        interactionFilter.innerHTML = '<option value="all">All</option>';
+        familiarityFilter.innerHTML = '<option value="all">All</option>';
+
+        // Add predefined relationship types
+        const relationshipTypes = ["Friend", "Family", "Colleague", "Romantic", "Other"];
+        relationshipTypes.forEach(type => {
+            const option = document.createElement("option");
+            option.value = type;
+            option.textContent = type;
+            relationshipFilter.appendChild(option);
+        });
+
+        // Add predefined interaction places
+        const interactionPlaces = ["Online", "Work", "School", "Home", "Cafe", "Sports", "Other"];
+        interactionPlaces.forEach(place => {
+            const option = document.createElement("option");
+            option.value = place;
+            option.textContent = place;
+            interactionFilter.appendChild(option);
+        });
+
+        // Add predefined intimacy levels (1-7)
+        for (let level = 1; level <= 7; level++) {
+            const option = document.createElement("option");
+            option.value = level;
+            option.textContent = `Level ${level}`;
+            familiarityFilter.appendChild(option);
+        };
+    }
     function updateCharts() {
+        const relationshipFilter = document.getElementById("relationship-filter").value;
+        const interactionFilter = document.getElementById("interaction-filter").value;
+        const familiarityFilter = document.getElementById("familiarity-filter").value;
+
+        // Filter data based on selected filters
+        const filteredData = dataPoints.filter(d => {
+            return (relationshipFilter === "all" || d.relationship === relationshipFilter) &&
+                (interactionFilter === "all" || d.interaction === interactionFilter) &&
+                (familiarityFilter === "all" || d.familiarity == familiarityFilter);
+        });
         ["IE", "NS", "FT", "JP"].forEach(scale => {
-            drawScaleChart(`chart${scale}`, scale, dataPoints, scale);
+            drawScaleChart(`chart${scale}`, scale, filteredData, scale);
         });
     }
 
@@ -156,15 +246,27 @@
         const ctx = document.getElementById(canvasId).getContext("2d");
         if (charts[canvasId]) charts[canvasId].destroy();
 
+        let axisLabels = {
+            "IE": "I ←→ E",
+            "NS": "N ←→ S",
+            "FT": "F ←→ T",
+            "JP": "J ←→ P"
+        };
+
+        // Get the appropriate labels for the x-axis based on the dimension
+        let leftLabel = key.charAt(0);
+        let rightLabel = key.charAt(1);
+
         charts[canvasId] = new Chart(ctx, {
             type: "scatter",
             data: {
                 datasets: [{
                     label: label,
                     data: data.map(d => ({
-                        x: d[key] >= 50 ? d[key] : 100 - d[key],
-                        y: Math.random() * 20 + 40, // Y轴范围缩小
-                        r: d.familiarity * 10 * 1.25
+                        x: d[key],
+                        y: Math.random() * 20 + 40, // Reduced Y-axis range
+                        relationship: d.relationship, // Add relationship info for legend
+                        interaction: d.interaction // Add interaction info for legend
                     })),
                     backgroundColor: data.map(d => getColorForRelationship(d.relationship)),
                     pointStyle: data.map(d => getShapeForInteraction(d.interaction)),
@@ -172,21 +274,43 @@
             },
             options: {
                 responsive: true,
-                plugins: { legend: { display: false } }, // 隐藏 "I/E Scale" 标签
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function (context) {
+                                // Convert x value to show which trait is stronger
+                                let value = context.parsed.x;
+                                let trait = value <= 50 ? leftLabel : rightLabel;
+                                let strength = value <= 50 ? 100 - value * 2 : (value - 50) * 2;
+                                return `${trait}: ${Math.round(strength)}%`;
+                            }
+                        }
+                    }
+                },
                 scales: {
                     x: {
                         min: 0,
                         max: 100,
                         title: {
                             display: true,
-                            text: getAxisLabel(label) // 自定义 x 轴标签
+                            text: axisLabels[key]
+                        },
+                        ticks: {
+                            callback: function (value) {
+                                if (value === 0) return leftLabel + " 100%";
+                                if (value === 50) return "50/50";
+                                if (value === 100) return rightLabel + " 100%";
+                                return "";
+                            }
                         }
                     },
-                    y: { display: false } // Y轴隐藏
+                    y: { display: false } // Hide Y-axis
                 }
             }
         });
     }
+
 
     function getAxisLabel(type) {
         return {
