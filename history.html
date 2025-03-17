@@ -23,17 +23,215 @@
                 <th>J/P</th>
                 <th>Familiarity(1~7)</th>
                 <th>Timestamp</th>
+                <th>Relationship Type</th>
+                <th>Most Interaction Place</th>
+            </tr>
+        </thead>
+        <tbody id="history-table">
+            <!-- Data will be dynamically filled here -->
+        </tbody>
+    </table>
+
+    <!-- My Report Button -->
+    <div id="report-container" style="text-align: center; margin-top: 20px">
+        <button id="report-btn"
+            style="padding: 10px 20px; font-size: 16px; background: linear-gradient(135deg, #2489b8, #e995b8); color: white; border: none; border-radius: 8px; cursor: pointer;">
+            My Report
+        </button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getDatabase, ref, query, orderByChild, equalTo, get, update } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            console.log("Loading history...");
+            const firebaseConfig = {
+                apiKey: "AIzaSyCvc9C5PuDqrI26jrmsg5b1PVOW6_k43W4",
+                authDomain: "mbti-kale.firebaseapp.com",
+                databaseURL: "https://mbti-kale-default-rtdb.asia-southeast1.firebasedatabase.app",
+                projectId: "mbti-kale",
+                storageBucket: "mbti-kale.firebasestorage.app",
+                messagingSenderId: "756176954275",
+                appId: "1:756176954275:web:7581e5e485e426b33ff016",
+                measurementId: "G-B6F0F4JZ7E"
+            };
+
+            const app = initializeApp(firebaseConfig);
+            const database = getDatabase(app);
+            const urlParams = new URLSearchParams(window.location.search);
+            const username = urlParams.get("username");
+
+            if (!username) {
+                alert("Invalid access. No username provided.");
+                window.location.href = "index.html";
+                return;
+            }
+
+            try {
+                const dbRef = ref(database, "responses");
+                const q = query(dbRef, orderByChild("username"), equalTo(username));
+                const snapshot = await get(q);
+
+                if (snapshot.exists()) {
+                    console.log("Data found:", snapshot.val());
+                    const tableBody = document.getElementById("history-table");
+                    let index = 1;
+                    let totalRecords = 0;
+                    let savedRecords = 0;
+
+                    snapshot.forEach((childSnapshot) => {
+                        totalRecords++;
+                        const data = childSnapshot.val();
+                        const recordKey = childSnapshot.key;
+
+                        const row = document.createElement("tr");
+                        row.innerHTML = `
+                            <td>${index}</td>
+                            <td>${data.email}</td>
+                            <td>${data.ie}</td>
+                            <td>${data.ns}</td>
+                            <td>${data.ft}</td>
+                            <td>${data.jp}</td>
+                            <td>${data.intimacyGraph}</td>
+                            <td>${new Date(data.timestamp).toLocaleDateString([], { month: '2-digit', day: '2-digit' })} 
+                                ${new Date(data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</td>
+                        `;
+                        index++;
+
+                        /** 🔹 Relationship Type **/
+                        const relationshipTd = document.createElement("td");
+                        if (data.relationshipType) {
+                            relationshipTd.innerHTML = `<span>${data.relationshipType}</span>`;
+                            savedRecords++;
+                        } else {
+                            const relationshipSelect = document.createElement("select");
+                            const relationshipInput = document.createElement("input");
+                            relationshipInput.style.display = "none";
+
+                            ["", "Friend", "Family", "Colleague", "Other", "Romantic"].forEach(optionText => {
+                                const option = document.createElement("option");
+                                option.value = optionText;
+                                option.text = optionText || "Select...";
+                                relationshipSelect.appendChild(option);
+                            });
+
+                            relationshipSelect.addEventListener("change", () => {
+                                relationshipInput.style.display = relationshipSelect.value === "Other" ? "block" : "none";
+                                autoSave(recordKey, relationshipSelect.value, interactionSelect.value);
+                            });
+
+                            relationshipTd.appendChild(relationshipSelect);
+                            relationshipTd.appendChild(relationshipInput);
+                        }
+                        row.appendChild(relationshipTd);
+
+                        /** 🔹 Most Interaction Place **/
+                        const interactionTd = document.createElement("td");
+                        if (data.interactionPlace) {
+                            interactionTd.innerHTML = `<span>${data.interactionPlace}</span>`;
+                            savedRecords++;
+                        } else {
+                            const interactionSelect = document.createElement("select");
+                            const interactionInput = document.createElement("input");
+                            interactionInput.style.display = "none";
+
+                            ["", "Online", "Work", "School", "Home", "Cafe", "Sports", "Other"].forEach(optionText => {
+                                const option = document.createElement("option");
+                                option.value = optionText;
+                                option.text = optionText || "Select...";
+                                interactionSelect.appendChild(option);
+                            });
+
+                            interactionSelect.addEventListener("change", () => {
+                                interactionInput.style.display = interactionSelect.value === "Other" ? "block" : "none";
+                                autoSave(recordKey, relationshipSelect.value, interactionSelect.value);
+                            });
+
+                            interactionTd.appendChild(interactionSelect);
+                            interactionTd.appendChild(interactionInput);
+                        }
+                        row.appendChild(interactionTd);
+
+                        tableBody.appendChild(row);
+                    });
+                }
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                alert("Failed to load history.");
+            }
+        });
+
+        function autoSave(recordKey, relationship, interaction) {
+            if (relationship === "" || interaction === "") return;
+
+            const updatedData = {
+                relationshipType: relationship,
+                interactionPlace: interaction
+            };
+
+            const database = getDatabase();
+            update(ref(database, `responses/${recordKey}`), updatedData)
+                .then(() => {
+                    console.log("Auto-saved:", updatedData);
+                })
+                .catch(error => {
+                    console.error("Auto-save error:", error);
+                    alert("Failed to auto-save: " + error.message);
+                });
+        }
+
+        document.getElementById('report-btn').addEventListener('click', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const username = urlParams.get("username");
+            console.log(username);
+            if (username === "") {
+                alert("Please enter a username.");
+                return;
+            }
+            window.location.href = `report.html?username=${encodeURIComponent(username)}`;
+        });
+    </script>
+</body>
+
+</html>
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Questionnaire History</title>
+    <script src="switch_language.js" defer></script>
+    <link rel="stylesheet" href="style3.css">
+</head>
+
+<body>
+    <h1>My Questionnaire History</h1>
+    <p id="history-description">Here are the records you collect.</p>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Email</th>
+                <th>I/E</th>
+                <th>N/S</th>
+                <th>F/T</th>
+                <th>J/P</th>
+                <th>Familiarity(1~7)</th>
+                <th>Timestamp</th>
                 <th>Relationship type</th>
                 <th>Most interaction place</th>
                 <th>Action</th>
             </tr>
-            <!--  -->
+            <!--  
         </thead>
         <tbody id="history-table">
-            <!-- 数据将会动态填充 -->
+            <!-- 数据将会动态填充 
         </tbody>
     </table>
-    <!-- My Report 按钮 -->
+    <!-- My Report 按钮 
     <div id="report-container" style="text-align: center; margin-top: 20px; display: none;">
         <button id="report-btn"
             style="padding: 10px 20px; font-size: 16px; background: linear-gradient(135deg, #2489b8, #e995b8); color: white; border: none; border-radius: 8px; cursor: pointer;">My
@@ -224,4 +422,4 @@
     </script>
 </body>
 
-</html>
+</html> -->
