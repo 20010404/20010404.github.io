@@ -61,7 +61,7 @@
             const questionnaireUrl = `${baseUrl}/questionnaire.html?username=${encodeURIComponent(username)}`;
 
             // 生成 WhatsApp 分享链接
-            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent("Please input your feelings about me. Check out this MBTI questionnaire! " + questionnaireUrl)}`;
+            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent("[English]Hi, we are conducting a user study. It's about how different people perceive my MBTI. And I would like to know what type of MBTI you think I am. [한국어]안녕하세요, 저희는 사용자 연구를 진행하고 있습니다. 다른 사람들이 제 MBTI를 어떻게 인식하는지에 대한 연구입니다. 그리고 저는 당신이 저를 어떤 유형의 MBTI라고 생각하는지 알고 싶습니다.[中文]您好，我们正在进行用户研究。这是一项关于其他人如何看待我的 MBTI 的研究，我想知道您认为我属于哪种 MBTI 类型。" + questionnaireUrl)}`;
 
             // 打开 WhatsApp
             window.open(whatsappUrl, "_blank");
@@ -81,8 +81,8 @@
             Kakao.Link.sendDefault({
                 objectType: 'feed',
                 content: {
-                    title: 'MBTI study',
-                    description: 'Please input your feelings about me, like what type of MBTI you think I am',
+                    title: 'MBTI study/연구/研究',
+                    description: "[English]Hi, we are conducting a user study. It's about how different people perceive my MBTI. And I would like to know what type of MBTI you think I am. [한국어]안녕하세요, 저희는 사용자 연구를 진행하고 있습니다. 다른 사람들이 제 MBTI를 어떻게 인식하는지에 대한 연구입니다. 그리고 저는 당신이 저를 어떤 유형의 MBTI라고 생각하는지 알고 싶습니다.[中文]您好，我们正在进行用户研究。这是一项关于其他人如何看待我的 MBTI 的研究，我想知道您认为我属于哪种 MBTI 类型。",
                     imageUrl: 'https://your-image-url.com/image.png',
                     link: {
                         mobileWebUrl: questionnaireUrl,
@@ -150,7 +150,6 @@
                 // 兼容方案：弹出手动分享选项
                 const shareOptions = `
                     Copy the link manually: ${questionnaireUrl}
-
                     Or share via:
                     - WeChat: Open WeChat and paste the link
                     - WhatsApp: <a href="https://wa.me/?text=${encodeURIComponent(questionnaireUrl)}" target="_blank">Click here</a>

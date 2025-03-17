@@ -3,7 +3,7 @@ const translations = {
         title: "'s MBTI Questionnaire ",
         introduction: " According to real-life interactions ,you can answer with 4 different dimensions from MBTI to describe how you perceive ",
         email: "Your given name",
-        relation: "Please choose the graph that best describes your familiarity",
+        relation: "Please choose the graph that best describes your familiarity with",
         ie: "I/E Percentage:",
         ieTooltip: "I: Introversion, E: Extraversion",
         ns: "N/S Percentage:",
