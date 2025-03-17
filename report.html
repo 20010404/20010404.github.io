@@ -127,7 +127,7 @@
                 const dbRef = ref(database, "responses");
                 const q = query(dbRef, orderByChild("username"), equalTo(username));
                 const snapshot = await get(q);
-
+                console.log(username);
                 if (!snapshot.exists()) {
                     document.getElementById("average-mbti").textContent = "No data found.";
                     return;

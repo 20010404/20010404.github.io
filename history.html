@@ -185,7 +185,7 @@
                                 }
                             });
 
-                            actionTd.appendChild(saveButton);
+                            actionTd.appendChild(saveButton); savedRecord
                         }
 
                         row.appendChild(actionTd);
@@ -202,7 +202,7 @@
         function checkAndShowReportButton(total, saved) {
             console.log(`Total records: ${total}, Saved records: ${saved}`);
 
-            if (total >= 10 && total === saved) {
+            if (total >= 1 && total === saved) {
                 const reportContainer = document.getElementById("report-container");
                 const reportBtn = document.getElementById("report-btn");
 
@@ -214,8 +214,8 @@
                     const baseUrl = window.location.hostname === '127.0.0.1' ?
                         'http://127.0.0.1:5500' : window.location.origin;
 
-                    console.log(`Navigating to: ${baseUrl}/report.html?username=${encodeURIComponent(username)}`);
-                    window.location.href = `${baseUrl}/report.html?username=${encodeURIComponent(username)}`;
+                    console.log(`Navigating to: ${baseUrl}/report.html?username=${username}`);
+                    window.location.href = `${baseUrl}/report.html?username=${username}`;
                     console.log("Navigating to: ...")
                 };
             }
