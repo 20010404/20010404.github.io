@@ -124,8 +124,15 @@
             // 检测浏览器是否支持 Web Share API
             if (navigator.share) {
                 navigator.share({
-                    title: "MBTI Questionnaire",
-                    text: `Hey! Here’s your MBTI questionnaire link:`,
+                    title: "MBTI study/연구/研究",
+                    text:
+                        "[English] Hi, we are conducting a user study. It's about how different people perceive my MBTI. " +
+                        "And I would like to know what type of MBTI you think I am.\n\n" +
+                        "[한국어] 안녕하세요, 저희는 사용자 연구를 진행하고 있습니다. " +
+                        "다른 사람들이 제 MBTI를 어떻게 인식하는지에 대한 연구입니다. " +
+                        "그리고 저는 당신이 저를 어떤 유형의 MBTI라고 생각하는지 알고 싶습니다.\n\n" +
+                        "[中文] 您好，我们正在进行用户研究。这是一项关于其他人如何看待我的 MBTI 的研究，" +
+                        "我想知道您认为我属于哪种 MBTI 类型。\n\n Click 👇\n" + questionnaireUrl,
                     url: questionnaireUrl
                 }).then(() => {
                     console.log('Link shared successfully');
@@ -133,16 +140,24 @@
                     console.error('Error sharing:', error);
                 });
             } else {
-                // 兼容方案：弹出手动分享选项
-                const shareOptions = `
-                    Copy the link manually: ${questionnaireUrl}
-                    Or share via:
-                    - WeChat: Open WeChat and paste the link
-                    - WhatsApp: <a href="https://wa.me/?text=${encodeURIComponent(questionnaireUrl)}" target="_blank">Click here</a>
-                    - Email: <a href="mailto:?subject=MBTI Questionnaire&body=${encodeURIComponent(questionnaireUrl)}">Click to send email</a>
-                `;
-                alert(shareOptions);
+                // 📌 兼容方案：自动复制到剪贴板
+                const shareText =
+                    "[English] Hi, we are conducting a user study. It's about how different people perceive my MBTI. " +
+                    "And I would like to know what type of MBTI you think I am.\n\n" +
+                    "[한국어] 안녕하세요, 저희는 사용자 연구를 진행하고 있습니다. " +
+                    "다른 사람들이 제 MBTI를 어떻게 인식하는지에 대한 연구입니다. " +
+                    "그리고 저는 당신이 저를 어떤 유형의 MBTI라고 생각하는지 알고 싶습니다.\n\n" +
+                    "[中文] 您好，我们正在进行用户研究。这是一项关于其他人如何看待我的 MBTI 的研究，" +
+                    "我想知道您认为我属于哪种 MBTI 类型。\n\n Click 👇\n" + questionnaireUrl;
+
+                navigator.clipboard.writeText(shareText).then(() => {
+                    alert("📋 √");
+                }).catch(err => {
+
+                    alert("Ctrl+C \n\n" + shareText);
+                });
             }
+
         });
 
         document.getElementById('history-btn').addEventListener('click', () => {
