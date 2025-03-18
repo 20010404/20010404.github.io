@@ -233,7 +233,7 @@ label {
 /* Tooltip 文字信息 */
 .tooltip .tooltip-text {
     visibility: hidden;
-    width: max-content;
+    width: 400px;
 
     background-color: rgba(0, 0, 0, 0.8);
     color: white;
