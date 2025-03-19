@@ -39,49 +39,49 @@
         <form id="questionnaire-form" onsubmit="submitQuestionnaire(event)">
             <div class="form-row">
                 <label for="email" id="label-email">Your given name</label>
-                <input type="text" id="email" name="email" placeholder="Bob/준영/昊天" required>
             </div>
-            <p id="relation">Please choose the graph that best describes your relationship closeness with <span
-                    id="username"></span>
-            </p>
-
+            <div class="form-row"> <input type="text" id="email" name="email" placeholder="Bob/준영/昊天" required></div>
+            <div class="form-row">
+                <lable id="relation">Please choose the graph that best describes your relationship closeness with <span
+                        id="username"></span></lable>
+            </div>
             <div class="graph-selection">
                 <input type="hidden" id="selectedGraph" name="intimacyGraph" value="">
                 <div class="graph-options"></div>
             </div>
             <div class="form-row">
-                <label for="ie" id="label-ie">I/E Type:</label>
+                <label for="ie" id="label-ie">I/E Type</label>
                 <span class="tooltip">?
-                    <span class="tooltip-text" id="tooltip-ie">Introverts(I) are energized by spending quiet time alone or with a small group. They tend to be more reserved and thoughtful.
-
-                        Extraverts(E) are energized by spending time with people and in busy, active surroundings. They tend to be more expressive and outspoken.</span>
+                    <span class="tooltip-text" id="tooltip-ie">Introverts(I) are energized by spending quiet time alone
+                        or with a small group. They tend to be more reserved and thoughtful.
+                        Extraverts(E) are energized by spending time with people and in busy, active surroundings. They
+                        tend to be more expressive and outspoken.</span>
                 </span>
-                <input type="text" id="ie" name="ie" placeholder="e.g., E" required>
-            </div>
 
+            </div>
+            <div class="form-row"><input type="text" id="ie" name="ie" placeholder="e.g., E" required></div>
             <div class="form-row">
-                <label for="ns" id="label-ns">N/S Type:</label>
+                <label for="ns" id="label-ns">N/S Type</label>
                 <span class="tooltip">?
                     <span class="tooltip-text" id="tooltip-ns">N: Intuition, S: Sensing</span>
                 </span>
-                <input type="text" id="ns" name="ns" placeholder="e.g., N" required>
             </div>
+            <div class="form-row"> <input type="text" id="ns" name="ns" placeholder="e.g., N" required> </div>
 
             <div class="form-row">
-                <label for="ft" id="label-ft"> F/T Type:</label>
+                <label for="ft" id="label-ft"> F/T Type</label>
                 <span class="tooltip">?
                     <span class="tooltip-text" id="tooltip-ft">F: Feeling, T: Thinking</span>
                 </span>
-                <input type="text" id="ft" name="ft" placeholder="e.g., F" required>
             </div>
-
+            <div class="form-row"> <input type="text" id="ft" name="ft" placeholder="e.g., F" required></div>
             <div class="form-row">
-                <label for="jp" id="label-jp">J/P Type:</label>
+                <label for="jp" id="label-jp">J/P Type</label>
                 <span class="tooltip">?
                     <span class="tooltip-text" id="tooltip-jp">J: Judging, P: Perceiving</span>
                 </span>
-                <input type="text" id="jp" name="jp" placeholder="e.g., J" required>
             </div>
+            <div class="form-row"><input type="text" id="jp" name="jp" placeholder="e.g., J" required></div>
             <button type="submit" id="submit-button">Submit</button>
         </form>
 
@@ -152,7 +152,7 @@
                 <defs>
                     <linearGradient id="gradient-border" x1="0%" y1="0%" x2="100%" y2="100%">
                         <stop offset="0%" style="stop-color:#2489b8; stop-opacity:1" />
-                        <stop offset="100%" style="stop-color:#e995b8; stop-opacity:1" />
+                        <stop offset="100%" style="stop-color   :#e995b8; stop-opacity:1" />
                     </linearGradient>
                 </defs>
                 <circle cx="${cx1}" cy="40" r="40" stroke="black" stroke-width="1" fill="none"/>

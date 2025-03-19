@@ -11,21 +11,9 @@
     <style>
         .chart-container {
             display: flex;
-            flex-wrap: wrap;
-            justify-content: space-around;
+            justify-content: center;
             max-width: 90%;
             margin: 0 auto;
-        }
-
-        .chart-box {
-            width: 45%;
-            min-width: 300px;
-            min-height: 250px;
-        }
-
-        canvas {
-            width: 100% !important;
-            height: 100% !important;
         }
 
         .filters {
@@ -36,34 +24,27 @@
 </head>
 
 <body>
-    <h1>My MBTI Report</h1>
+    <h2>My MBTI Report</h2>
     <p>This report shows the average MBTI perception others have of you.</p>
-
-    <h2>Average MBTI Perception</h2>
-    <p id="average-mbti">Loading...</p>
-
     <div class="filters">
-        <label for="relationship-filter">Filter by Relationship Type:</label>
+        <label for="relationship-filter">Relationship Type:</label>
         <select id="relationship-filter">
             <option value="all">All</option>
         </select>
 
-        <label for="interaction-filter">Filter by Interaction Place:</label>
+        <label for="interaction-filter">Interaction Place:</label>
         <select id="interaction-filter">
             <option value="all">All</option>
         </select>
 
-        <label for="familiarity-filter">Filter by Familiarity Level:</label>
+        <label for="familiarity-filter">Familiarity Level:</label>
         <select id="familiarity-filter">
             <option value="all">All</option>
         </select>
     </div>
 
     <div class="chart-container">
-        <div class="chart-box"><canvas id="chartIE"></canvas></div>
-        <div class="chart-box"><canvas id="chartNS"></canvas></div>
-        <div class="chart-box"><canvas id="chartFT"></canvas></div>
-        <div class="chart-box"><canvas id="chartJP"></canvas></div>
+        <canvas id="mbtiChart"></canvas>
     </div>
 
 </body>
@@ -94,29 +75,24 @@
     }
 
     let dataPoints = [];
-    let charts = {};
+    let mbtiChart = null;
 
     async function fetchData() {
         const dbRef = ref(database, "responses");
         const q = query(dbRef, orderByChild("username"), equalTo(username));
         const snapshot = await get(q);
         if (!snapshot.exists()) {
-            document.getElementById("average-mbti").textContent = "No data found.";
+            alert("No data found for this user.");
             return;
         }
 
-        let totalCount = 0;
-        let sumI = 0, sumE = 0, sumN = 0, sumS = 0, sumF = 0, sumT = 0, sumJ = 0, sumP = 0;
-        let relationshipTypes = new Set();
         dataPoints = [];
-        let interactionPlaces = new Set();
-        let familiarityLevels = new Set();
         snapshot.forEach((childSnapshot) => {
             const data = childSnapshot.val();
 
             function parseMBTI(value) {
-                let percent = parseInt(value.replace(/[^0-9]/g, ""), 10); // 解析数值
-                let type = value.replace(/[0-9%]/g, "").trim(); // 解析类型
+                let percent = parseInt(value.replace(/[^0-9]/g, ""), 10);
+                let type = value.replace(/[0-9%]/g, "").trim();
                 return { percent, type };
             }
 
@@ -124,83 +100,38 @@
             let nsData = parseMBTI(data.ns);
             let ftData = parseMBTI(data.ft);
             let jpData = parseMBTI(data.jp);
-            let ieValue = ieData.type === "I" ? 50 - (ieData.percent / 2) : 50 + (ieData.percent / 2);
-            let nsValue = nsData.type === "N" ? 50 - (nsData.percent / 2) : 50 + (nsData.percent / 2);
-            let ftValue = ftData.type === "F" ? 50 - (ftData.percent / 2) : 50 + (ftData.percent / 2);
-            let jpValue = jpData.type === "J" ? 50 - (jpData.percent / 2) : 50 + (jpData.percent / 2);
 
-            // Add to dataset
+            // 确定MBTI类型
+            let mbtiType =
+                (ieData.type === "I" ? "I" : "E") +
+                (nsData.type === "N" ? "N" : "S") +
+                (ftData.type === "F" ? "F" : "T") +
+                (jpData.type === "J" ? "J" : "P");
+
+            // 添加数据点
             dataPoints.push({
-                IE: ieValue,
-                NS: nsValue,
-                FT: ftValue,
-                JP: jpValue,
+                mbtiType: mbtiType,
                 familiarity: parseInt(data.intimacyGraph) || 1,
                 relationship: data.relationshipType || "Other",
                 interaction: data.interactionPlace || "Other"
             });
-            // 累计 I/E
-            if (ieData.type === "I") sumI += ieData.percent - 50;
-            else sumE += ieData.percent - 50;
-
-            // 累计 N/S
-            if (nsData.type === "N") sumN += nsData.percent - 50;
-            else sumS += nsData.percent - 50;
-
-            // 累计 F/T
-            if (ftData.type === "T") sumT += ftData.percent - 50;
-            else sumF += ftData.percent - 50;
-
-            // 累计 J/P
-            if (jpData.type === "J") sumJ += jpData.percent - 50;
-            else sumP += jpData.percent - 50;
-
-
-            totalCount++;
         });
 
-        // 计算最终百分比
-        let avgI = sumI / totalCount;
-        let avgE = sumE / totalCount;
-        let avgN = sumN / totalCount;
-        let avgS = sumS / totalCount;
-        let avgF = sumF / totalCount;
-        let avgT = sumT / totalCount;
-        let avgJ = sumJ / totalCount;
-        let avgP = sumP / totalCount;
-
-        // 判断最终类型
-        let finalIE = avgE >= avgI ? "E" : "I";
-        let finalNS = avgN >= avgS ? "N" : "S";
-        let finalFT = avgT >= avgF ? "T" : "F";
-        let finalJP = avgJ >= avgP ? "J" : "P";
-
-        // 计算最终胜出的百分比
-        let finalIEPercent = finalIE === "E" ? avgE + 50 - avgI : avgI + 50 - avgE;
-        let finalNSPercent = finalNS === "N" ? avgN + 50 - avgS : avgS + 50 - avgN;
-        let finalFTPercent = finalFT === "T" ? avgT + 50 - avgF : avgF + 50 - avgT;
-        let finalJPPercent = finalJP === "J" ? avgJ + 50 - avgP : avgP + 50 - avgJ;
-
-        // 显示最终的 MBTI 结果，保留两位小数
-        document.getElementById("average-mbti").textContent =
-            `${finalIE} (${finalIEPercent.toFixed(2)}%)  
-     ${finalNS} (${finalNSPercent.toFixed(2)}%)  
-     ${finalFT} (${finalFTPercent.toFixed(2)}%)  
-     ${finalJP} (${finalJPPercent.toFixed(2)}%)`;
-        populateFilterDropdowns(relationshipTypes, interactionPlaces, familiarityLevels);
-        updateCharts();
+        populateFilterDropdowns();
+        updateChart();
     }
+
     function populateFilterDropdowns() {
         const relationshipFilter = document.getElementById("relationship-filter");
         const interactionFilter = document.getElementById("interaction-filter");
         const familiarityFilter = document.getElementById("familiarity-filter");
 
-        // Clear existing options except "All"
+        // 清除现有选项，除了"All"
         relationshipFilter.innerHTML = '<option value="all">All</option>';
         interactionFilter.innerHTML = '<option value="all">All</option>';
         familiarityFilter.innerHTML = '<option value="all">All</option>';
 
-        // Add predefined relationship types
+        // 添加预定义的关系类型
         const relationshipTypes = ["Friend", "Family", "Colleague", "Romantic", "Other"];
         relationshipTypes.forEach(type => {
             const option = document.createElement("option");
@@ -209,8 +140,8 @@
             relationshipFilter.appendChild(option);
         });
 
-        // Add predefined interaction places
-        const interactionPlaces = ["Online", "Work", "School", "Home", "Cafe", "Sports", "Other"];
+        // 添加预定义的互动场所
+        const interactionPlaces = ["Physical", "Virtual", "Mixed"];
         interactionPlaces.forEach(place => {
             const option = document.createElement("option");
             option.value = place;
@@ -218,133 +149,137 @@
             interactionFilter.appendChild(option);
         });
 
-        // Add predefined intimacy levels (1-7)
+        // 添加预定义的熟悉程度（1-7）
         for (let level = 1; level <= 7; level++) {
             const option = document.createElement("option");
             option.value = level;
             option.textContent = `Level ${level}`;
             familiarityFilter.appendChild(option);
-        };
+        }
     }
-    function updateCharts() {
+    function updateChart() {
         const relationshipFilter = document.getElementById("relationship-filter").value;
         const interactionFilter = document.getElementById("interaction-filter").value;
         const familiarityFilter = document.getElementById("familiarity-filter").value;
 
-        // Filter data based on selected filters
         const filteredData = dataPoints.filter(d => {
             return (relationshipFilter === "all" || d.relationship === relationshipFilter) &&
                 (interactionFilter === "all" || d.interaction === interactionFilter) &&
                 (familiarityFilter === "all" || d.familiarity == familiarityFilter);
         });
-        ["IE", "NS", "FT", "JP"].forEach(scale => {
-            drawScaleChart(`chart${scale}`, scale, filteredData, scale);
-        });
-    }
 
-    function drawScaleChart(canvasId, key, data, label) {
-        const ctx = document.getElementById(canvasId).getContext("2d");
-        if (charts[canvasId]) charts[canvasId].destroy();
+        const mbtiTypes = [
+            "ISTJ", "ISFJ", "INFJ", "INTJ",
+            "ISTP", "ISFP", "INFP", "INTP",
+            "ESTP", "ESFP", "ENFP", "ENTP",
+            "ESTJ", "ESFJ", "ENFJ", "ENTJ"
+        ];
 
-        let axisLabels = {
-            "IE": "I ←→ E",
-            "NS": "N ←→ S",
-            "FT": "F ←→ T",
-            "JP": "J ←→ P"
-        };
+        const datasets = [{
+            label: "MBTI Distribution",
+            data: filteredData.map(d => {
+                const typeIndex = mbtiTypes.indexOf(d.mbtiType);
+                const col = typeIndex % 4;
+                const row = 3 - Math.floor(typeIndex / 4);
 
-        // Get the appropriate labels for the x-axis based on the dimension
-        let leftLabel = key.charAt(0);
-        let rightLabel = key.charAt(1);
+                return {
+                    x: col + 0.5 + (Math.random() - 1) * 0.2,
+                    y: row + 0.5 + (Math.random() - 1) * 0.2,
+                    r: d.familiarity * 3,
+                    mbtiType: d.mbtiType,
+                    relationship: d.relationship,
+                    interaction: d.interaction,
+                    familiarity: d.familiarity
+                };
+            }),
+            backgroundColor: filteredData.map(d => getColorForRelationship(d.relationship)),
+            pointStyle: filteredData.map(d => getShapeForInteraction(d.interaction)),
+        }];
 
-        charts[canvasId] = new Chart(ctx, {
+        const ctx = document.getElementById("mbtiChart").getContext("2d");
+        if (mbtiChart) mbtiChart.destroy();
+
+        mbtiChart = new Chart(ctx, {
             type: "bubble",
-            data: {
-                datasets: [{
-                    label: label,
-                    data: data.map(d => ({
-                        x: d[key],
-                        y: Math.random() * 2 + 5, // Reduced Y-axis range
-                        r: d.familiarity * 1.1,
-                        relationship: d.relationship, // Add relationship info for legend
-                        interaction: d.interaction // Add interaction info for legend
-                    })),
-                    backgroundColor: data.map(d => getColorForRelationship(d.relationship)),
-                    pointStyle: data.map(d => getShapeForInteraction(d.interaction)),
-                }]
-            },
+            data: { datasets },
             options: {
                 responsive: true,
+                aspectRatio: 1,
                 plugins: {
                     legend: { display: false },
                     tooltip: {
                         callbacks: {
-                            label: function (context) {
-                                // Convert x value to show which trait is stronger
-                                let value = context.parsed.x;
-                                let trait = value <= 50 ? leftLabel : rightLabel;
-                                let strength = value <= 50 ? 100 - value * 2 : (value - 50) * 2;
-                                return `${trait}: ${Math.round(strength)}%`;
+                            label: context => {
+                                const raw = context.raw;
+                                return [
+                                    `MBTI: ${raw.mbtiType}`,
+                                    `Relationship: ${raw.relationship}`,
+                                    `Interaction: ${raw.interaction}`,
+                                    `Familiarity: ${raw.familiarity}`
+                                ];
                             }
                         }
                     }
                 },
                 scales: {
                     x: {
-                        min: 0,
-                        max: 100,
-                        title: {
-                            display: true,
-                            text: axisLabels[key]
-                        },
-                        ticks: {
-                            callback: function (value) {
-                                if (value === 0) return leftLabel + " 100%";
-                                if (value === 50) return "50/50";
-                                if (value === 100) return rightLabel + " 100%";
-                                return "";
-                            }
-                        }
+                        min: 0, max: 4,
+                        ticks: { display: false },
+                        grid: { drawBorder: false, color: "transparent" }
                     },
-                    y: { display: false } // Hide Y-axis
+                    y: {
+                        min: 0, max: 4,
+                        ticks: { display: false },
+                        grid: { drawBorder: false, color: "transparent" }
+                    }
                 }
-            }
+            },
+            plugins: [{
+                id: 'mbtiLabel',
+                afterDraw: chart => {
+                    const ctx = chart.ctx;
+                    ctx.save();
+                    ctx.font = 'bold 14px Arial';
+                    ctx.fillStyle = 'black';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+
+                    mbtiTypes.forEach((type, i) => {
+                        const col = i % 4;
+                        const row = 3 - Math.floor(i / 4);
+                        const x = chart.scales.x.getPixelForValue(col + 0.5);
+                        const y = chart.scales.y.getPixelForValue(row + 0.5);
+
+                        ctx.fillText(type, x, y);
+                    });
+                    ctx.restore();
+                }
+            }]
         });
     }
 
 
-    function getAxisLabel(type) {
-        return {
-            "IE": "I ←→ E",
-            "NS": "N ←→ S",
-            "FT": "F ←→ T",
-            "JP": "J ←→ P"
-        }[type];
-    }
-
     function getColorForRelationship(type) {
         return {
-            "Friend": "#A3C4BC",
-            "Family": "#E4C1F9",
-            "Colleague": "#F4A261",
-            "Romantic": "#E76F51",
-            "Unknown": "#BDBDBD"
-        }[type] || "black";
+            "Friend": "rgba(163, 196, 188, 0.7)",
+            "Family": "rgba(228, 193, 249, 0.7)",
+            "Colleague": "rgba(244, 162, 97, 0.7)",
+            "Romantic": "rgba(231, 111, 81, 0.7)",
+            "Other": "rgba(189, 189, 189, 0.7)"
+        }[type] || "rgba(0, 0, 0, 0.5)";
     }
 
     function getShapeForInteraction(place) {
         return {
-            "Online": "circle",
-            "Work": "triangle",
-            "School": "rect",
-            "Cafe": "star",
-            "Sports": "cross"
-        }[place] || "rectRot";
+            "Virtual": "circle",
+            "Mixed": "triangle",
+            "Physical": "star",
+        }[place] || "circle";
     }
 
-    document.getElementById("relationship-filter").addEventListener("change", updateCharts);
-    document.getElementById("interaction-filter").addEventListener("change", updateCharts);
-    document.getElementById("familiarity-filter").addEventListener("change", updateCharts);
+    document.getElementById("relationship-filter").addEventListener("change", updateChart);
+    document.getElementById("interaction-filter").addEventListener("change", updateChart);
+    document.getElementById("familiarity-filter").addEventListener("change", updateChart);
 
     fetchData();
 </script>

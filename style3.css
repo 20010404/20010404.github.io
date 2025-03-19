@@ -11,6 +11,12 @@ body {
     /* 让内容从左侧开始 */
 }
 
+.chart-container {
+    width: 700px;
+    height: 700px;
+    margin: auto;
+}
+
 
 /* 🔹 美化下拉框的基础样式 */
 select {
