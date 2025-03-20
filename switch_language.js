@@ -3,7 +3,7 @@ const translations = {
         title: "'s MBTI Questionnaire ",
         introduction: " According to real-life interactions ,you can answer with 4 different dimensions from MBTI to describe how you perceive ",
         email: "Your given name",
-        relation: "Please choose the graph that best describes your familiarity with",
+        relation: "How much do you think you know him/her? Please choose the graph that best describes your familiarity.",
         ie: "I/E Type    ",
         ieTooltip: "I type: Introverts are energized by spending quiet time alone or with a small group. They tend to be more reserved and thoughtful. \nE type: Extraverts are energized by spending time with people and in busy, active surroundings. They tend to be more expressive and outspoken.",
         ns: "N/S Type    ",
@@ -18,7 +18,7 @@ const translations = {
         title: "的MBTI问卷",
         introduction: "根据实际生活中的互动，你可以用MBTI的四个不同维度来回答，描述你如何感知",
         email: "您的名",
-        relation: "请选择最能体现您對他的熟悉程度的圖",
+        relation: "你认为你对他/她有多少了解？请选择最能体现您對他的熟悉程度的圖",
         ie: "I/E 类型    ",
         ieTooltip: "I 型：内向的人喜欢独自一人或与一小群人一起度过安静的时光，从而获得活力。他们往往更加内敛和深思熟虑。\n E 型：外向的人喜欢与人相处，喜欢在忙碌、活跃的环境中度过时光，从而获得活力。他们往往更善于表达和直言不讳。",
         ns: "N/S 类型    ",
@@ -33,7 +33,7 @@ const translations = {
         title: "의MBTI 설문지",
         introduction: "MBTI의 4가지 차원을 사용하여 실제 상호작용을 기반으로 어떻게 인식하는지 설명할 수 있습니다, ",
         email: "당신의 이름:",
-        relation: "가장 두 분의 친밀한 관계를 잘 나타내는 사진을 선택해 주세요 - 당신과",
+        relation: "당신은 그/그녀를 얼마나 알고 있다고 생각하시나요?가장 두 분의 친밀한 관계를 잘 나타내는 사진을 선택해 주세요 - 당신과",
         ie: "I/E 종류    ",
         ieTooltip: "I 유형: 내성적인 사람은 혼자 또는 소규모 그룹과 함께 조용한 시간을 보내는 것으로 활력을 얻습니다. 그들은 보다 내성적이고 사려 깊은 경향이 있습니다. \nE 유형: 외향적인 사람은 사람들과 바쁘고 활동적인 환경에서 시간을 보내는 것으로 활력을 얻습니다. 그들은 보다 표현력이 풍부하고 직설적인 경향이 있습니다.",
         ns: "N/S 종류    ",
@@ -65,7 +65,7 @@ function changeLanguage(lang) {
     // document.getElementById("introduction").textContent = translation.introduction;
     document.getElementById("introduction").innerHTML = `${translation.introduction}<span id="username">${username}</span>.`;
     document.getElementById("label-email").textContent = translation.email;
-    document.getElementById("relation").innerHTML = `${translation.relation} <span id="username">${username}</span>`;
+    document.getElementById("relation").innerHTML = `${translation.relation}`;
 
     document.getElementById("label-ie").textContent = translation.ie;
     document.getElementById("tooltip-ie").textContent = translation.ieTooltip;
