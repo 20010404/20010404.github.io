@@ -76,7 +76,7 @@ p {
 
 /* 让表格靠左排列 */
 table {
-    width: 80%;
+    width: 70%;
     border-collapse: collapse;
     background: rgba(255, 255, 255, 0.8);
     border: none;

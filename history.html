@@ -11,26 +11,33 @@
 
 <body>
     <h1>My Questionnaire History</h1>
-    <p id="history-description">Here are the records you collect.</p>
-    <table border="1">
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Name</th>
-                <th>I/E</th>
-                <th>N/S</th>
-                <th>F/T</th>
-                <th>J/P</th>
-                <th>Familiarity (Not[1] ~ strong[7] familiar ) </th>
-                <th>Timestamp</th>
-                <th>Relationship Type</th>
-                <th>Most Interaction Place(In the last month)</th>
-            </tr>
-        </thead>
-        <tbody id="history-table">
-            <!-- Data will be dynamically filled here -->
-        </tbody>
-    </table>
+    <p id="history-description">Here are the records you collect.Please choose the filters to describe your relationship type and the familiarity you think you have with them.</p>
+    
+<p>Interaction place (Physical: face to face; Virtual: online; Mixed: both)</p>
+<p>Familiarity scaless (1 = Not Familiar, 7 = Very Familiar)</p>
+<!-- 熟悉度示例图展示区域 -->
+<div id="familiarity-selector" style="margin: 20px 0; text-align: center;">
+    <div id="graph-options" style="display: flex; justify-content: center;">
+        <img src="ios.png" alt="Familiarity Levels" style="max-width: 40%; height: auto;">
+    </div>
+</div>
+
+<!-- 表格展示部分 -->
+<table border="1">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Relationship Type</th>
+            <th>Most Interaction Place<br>(In the last month)</th>
+            <th>When You Meet Him/Her</th>
+            <th>Familiarity</th>
+        </tr>
+    </thead>
+    <tbody id="history-table">
+        <!-- Data will be dynamically filled here -->
+    </tbody>
+</table>
 
     <!-- My Report Button -->
     <div id="report-container" style="text-align: center; margin-top: 20px">
@@ -40,148 +47,153 @@
         </button>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-        import { getDatabase, ref, query, orderByChild, equalTo, get, update } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+    import { getDatabase, ref, query, orderByChild, equalTo, get, update } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
 
-        document.addEventListener("DOMContentLoaded", async () => {
-            console.log("Loading history...");
-            const firebaseConfig = {
-                apiKey: "AIzaSyCvc9C5PuDqrI26jrmsg5b1PVOW6_k43W4",
-                authDomain: "mbti-kale.firebaseapp.com",
-                databaseURL: "https://mbti-kale-default-rtdb.asia-southeast1.firebasedatabase.app",
-                projectId: "mbti-kale",
-                storageBucket: "mbti-kale.firebasestorage.app",
-                messagingSenderId: "756176954275",
-                appId: "1:756176954275:web:7581e5e485e426b33ff016",
-                measurementId: "G-B6F0F4JZ7E"
-            };
+    document.addEventListener("DOMContentLoaded", async () => {
+        console.log("Loading history...");
+        const firebaseConfig = {
+            apiKey: "AIzaSyCvc9C5PuDqrI26jrmsg5b1PVOW6_k43W4",
+            authDomain: "mbti-kale.firebaseapp.com",
+            databaseURL: "https://mbti-kale-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "mbti-kale",
+            storageBucket: "mbti-kale.firebasestorage.app",
+            messagingSenderId: "756176954275",
+            appId: "1:756176954275:web:7581e5e485e426b33ff016",
+            measurementId: "G-B6F0F4JZ7E"
+        };
 
-            const app = initializeApp(firebaseConfig);
-            const database = getDatabase(app);
-            const urlParams = new URLSearchParams(window.location.search);
-            const username = urlParams.get("username");
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const urlParams = new URLSearchParams(window.location.search);
+        const username = urlParams.get("username");
 
-            if (!username) {
-                alert("Invalid access. No username provided.");
-                window.location.href = "index.html";
-                return;
-            }
+        if (!username) {
+            alert("Invalid access. No username provided.");
+            window.location.href = "index.html";
+            return;
+        }
 
-            try {
-                const dbRef = ref(database, "responses");
-                const q = query(dbRef, orderByChild("username"), equalTo(username));
-                const snapshot = await get(q);
+        try {
+            const dbRef = ref(database, "responses");
+            const q = query(dbRef, orderByChild("username"), equalTo(username));
+            const snapshot = await get(q);
 
-                if (snapshot.exists()) {
-                    console.log("Data found:", snapshot.val());
-                    const tableBody = document.getElementById("history-table");
-                    let index = 1;
-                    let totalRecords = 0;
-                    let savedRecords = 0;
-                    let relationshipSelects = {};
-                    let interactionSelects = {};
-                    snapshot.forEach((childSnapshot) => {
-                        totalRecords++;
-                        const data = childSnapshot.val();
-                        const recordKey = childSnapshot.key;
+            if (snapshot.exists()) {
+                console.log("Data found:", snapshot.val());
+                const tableBody = document.getElementById("history-table");
+                let index = 1;
+                let familiaritySelects = {}; // key: recordKey
+                snapshot.forEach((childSnapshot) => {
+                    const data = childSnapshot.val();
+                    const recordKey = childSnapshot.key;
 
-                        const row = document.createElement("tr");
-                        row.innerHTML = `
-                            <td>${index}</td>
-                            <td>${data.email}</td>
-                            <td>${data.ie}</td>
-                            <td>${data.ns}</td>
-                            <td>${data.ft}</td>
-                            <td>${data.jp}</td>
-                            <td>${data.intimacyGraph}</td>
-                            <td>${new Date(data.timestamp).toLocaleDateString([], { month: '2-digit', day: '2-digit' })} 
-                                ${new Date(data.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</td>
-                        `;
-                        index++;
+                    const row = document.createElement("tr");
+                    row.setAttribute("data-key", recordKey);
+                    row.innerHTML = `
+                        <td>${index}</td>
+                        <td>${data.email}</td>
+                    `;
+                    index++;
 
-                        /** 🔹 Relationship Type **/
-                        const relationshipTd = document.createElement("td");
-                        if (data.relationshipType) {
-                            relationshipTd.innerHTML = `<span>${data.relationshipType}</span>`;
-                            savedRecords++;
-                        } else {
-                            const relationshipSelect = document.createElement("select");
-                            const relationshipInput = document.createElement("input");
-                            relationshipInput.style.display = "none";
-                            relationshipSelects[recordKey] = relationshipSelect;
-                            ["", "Family", "Friend", "Colleague", "Romantic", "Other"].forEach(optionText => {
-                                const option = document.createElement("option");
-                                option.value = optionText;
-                                option.text = optionText || "Select...";
-                                relationshipSelect.appendChild(option);
-                            });
-
-                            relationshipSelect.addEventListener("change", () => {
-                                relationshipInput.style.display = relationshipSelect.value === "Other" ? "block" : "none";
-                                autoSave(recordKey, relationshipSelects[recordKey].value, interactionSelects[recordKey].value);
-                            });
-
-                            relationshipTd.appendChild(relationshipSelect);
-                            relationshipTd.appendChild(relationshipInput);
-                        }
-                        row.appendChild(relationshipTd);
-
-                        /** 🔹 Most Interaction Place **/
-                        const interactionTd = document.createElement("td");
-                        if (data.interactionPlace) {
-                            interactionTd.innerHTML = `<span>${data.interactionPlace}</span>`;
-                            savedRecords++;
-                        } else {
-                            const interactionSelect = document.createElement("select");
-                            const interactionInput = document.createElement("input");
-                            interactionInput.style.display = "none";
-                            interactionSelects[recordKey] = interactionSelect;
-
-                            ["", "Virtual", "Physical", "Mixed"].forEach(optionText => {
-                                const option = document.createElement("option");
-                                option.value = optionText;
-                                option.text = optionText || "Select...";
-                                interactionSelect.appendChild(option);
-                            });
-
-                            interactionSelect.addEventListener("change", () => {
-                                interactionInput.style.display = interactionSelect.value === "Other" ? "block" : "none";
-                                autoSave(recordKey, relationshipSelects[recordKey].value, interactionSelects[recordKey].value);
-                            });
-
-                            interactionTd.appendChild(interactionSelect);
-                            interactionTd.appendChild(interactionInput);
-                        }
-                        row.appendChild(interactionTd);
-
-                        tableBody.appendChild(row);
+                    // Relationship Type
+                    const relationshipTd = document.createElement("td");
+                    const relationshipSelect = document.createElement("select");
+                    ["", "Family", "Friend", "Colleague", "Romantic", "Other"].forEach(opt => {
+                        const option = document.createElement("option");
+                        option.value = opt;
+                        option.text = opt || "Select...";
+                        if (data.relationshipType === opt) option.selected = true;
+                        relationshipSelect.appendChild(option);
                     });
-                }
-            } catch (error) {
-                console.error("Error fetching data:", error);
-                alert("Failed to load history.");
-            }
-        });
+                    relationshipSelect.addEventListener("change", () => autoSave(recordKey));
+                    relationshipTd.appendChild(relationshipSelect);
+                    row.appendChild(relationshipTd);
 
-        function autoSave(recordKey, relationship, interaction) {
-            if (relationship === "" || interaction === "") return;
+                    // Interaction Place
+                    const interactionTd = document.createElement("td");
+                    const interactionSelect = document.createElement("select");
+                    ["", "Virtual", "Physical", "Mixed"].forEach(opt => {
+                        const option = document.createElement("option");
+                        option.value = opt;
+                        option.text = opt || "Select...";
+                        if (data.interactionPlace === opt) option.selected = true;
+                        interactionSelect.appendChild(option);
+                    });
+                    interactionSelect.addEventListener("change", () => autoSave(recordKey));
+                    interactionTd.appendChild(interactionSelect);
+                    row.appendChild(interactionTd);
+
+                    // Since When
+                    const sinceTd = document.createElement("td");
+                    const sinceSelect = document.createElement("select");
+                    const sinceOptions = [
+                        "Select...",
+                        "Since born (0 yrs old)",
+                        "Childhood (3–6 yrs old)",
+                        "Elementary School (6–12 yrs old)",
+                        "Middle School (12–15 yrs old)",
+                        "High School (15–18 yrs old)",
+                        "University Education (18–28 yrs old)",
+                        "Work (22+ yrs old)"
+                        ].forEach(opt => {
+                        const option = document.createElement("option");
+                        option.value = opt;
+                        option.text = opt || "Select...";
+                        if (data.sinceWhen === opt) option.selected = true;
+                        sinceSelect.appendChild(option);
+                    });
+                    sinceSelect.addEventListener("change", () => autoSave(recordKey));
+                    sinceTd.appendChild(sinceSelect);
+                    row.appendChild(sinceTd);
+
+                    // Familiarity
+                    const familiarityTd = document.createElement("td");
+                    const familiaritySelect = document.createElement("select");
+                    familiaritySelects[recordKey] = familiaritySelect;
+                    for (let i = 1; i <= 7; i++) {
+                        const option = document.createElement("option");
+                        option.value = i;
+                        option.text = i;
+                        if (parseInt(data.intimacyGraph) === i) option.selected = true;
+                        familiaritySelect.appendChild(option);
+                    }
+                    familiaritySelect.addEventListener("change", () => autoSave(recordKey));
+                    familiarityTd.appendChild(familiaritySelect);
+                    row.appendChild(familiarityTd);
+
+                    tableBody.appendChild(row);
+                });
+            }
+        } catch (error) {
+            console.error("Error fetching data:", error);
+            alert("Failed to load history.");
+        }
+
+        function autoSave(recordKey) {
+            const row = document.querySelector(`[data-key='${recordKey}']`);
+            const selects = row.querySelectorAll("select");
+            const relationship = selects[0].value;
+            const interaction = selects[1].value;
+            const sinceWhen = selects[2].value;
+            const familiarity = selects[3].value;
+
+            if (!relationship || !interaction || !sinceWhen || !familiarity) return;
 
             const updatedData = {
                 relationshipType: relationship,
-                interactionPlace: interaction
+                interactionPlace: interaction,
+                sinceWhen: sinceWhen,
+                intimacyGraphReverse: familiarity
             };
 
             const database = getDatabase();
             update(ref(database, `responses/${recordKey}`), updatedData)
-                .then(() => {
-                    console.log("Auto-saved:", updatedData);
-                })
-                .catch(error => {
-                    console.error("Auto-save error:", error);
-                    alert("Failed to auto-save: " + error.message);
-                });
+                .then(() => console.log("Saved", updatedData))
+                .catch(err => alert("Auto-save failed: " + err.message));
         }
+    });
 
         document.getElementById('report-btn').addEventListener('click', () => {
             const urlParams = new URLSearchParams(window.location.search);

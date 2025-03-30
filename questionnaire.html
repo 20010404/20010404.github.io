@@ -32,7 +32,6 @@
             This is an MBTI perception form, you can answer how you perceive <span id="username"></span> MBTI
             according to recent
             real-life interactions.
-            SDASA
         </p>
 
         <!-- 问卷表单 -->
@@ -86,13 +85,16 @@
         </form>
 
         <script type="module">
+            
+
             // 页面加载后初始化内容
             import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
             import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-analytics.js";
             import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
             document.addEventListener("DOMContentLoaded", async () => {
                 console.log("Initializing page...");
-
+                const graphContainer = document.getElementById("graph-options");
+           
                 // **🔥 Firebase 配置**
                 const firebaseConfig = {
                     apiKey: "AIzaSyCvc9C5PuDqrI26jrmsg5b1PVOW6_k43W4",

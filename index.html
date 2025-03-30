@@ -126,13 +126,19 @@
                 navigator.share({
                     title: "MBTI study/연구/研究",
                     text:
-                        "[English] Hi, we are conducting a user study. It's about how different people perceive my MBTI. " +
-                        "And I would like to know what type of MBTI you think I am.\n\n" +
-                        "[한국어] 안녕하세요, 저희는 사용자 연구를 진행하고 있습니다. " +
-                        "다른 사람들이 제 MBTI를 어떻게 인식하는지에 대한 연구입니다. " +
-                        "그리고 저는 당신이 저를 어떤 유형의 MBTI라고 생각하는지 알고 싶습니다.\n\n" +
-                        "[中文] 您好，我们正在进行用户研究。这是一项关于其他人如何看待我的 MBTI 的研究，" +
-                        "我想知道您认为我属于哪种 MBTI 类型。\n\n Click 👇\n" + questionnaireUrl,
+                        "[English] Hello! I’m participating in a user study that explores how people around me perceive my MBTI personality type. " +
+                        "As part of this research, I would greatly appreciate it if you could share what MBTI type you think best describes me. " +
+                        "All responses will be used for research purposes only and will remain completely anonymous. " +
+                        "Thank you very much for your time and support!\n\n" +
+                        "[한국어] 안녕하세요! 저는 현재 사람들이 저의 MBTI 성격 유형을 어떻게 인식하는지를 알아보는 사용자 연구에 참여하고 있습니다. " +
+                        "연구의 일환으로, 저를 어떤 MBTI 유형이라고 생각하시는지 말씀해 주시면 감사하겠습니다. " +
+                        "응답해 주신 내용은 연구 목적으로만 사용되며, 완전히 익명으로 처리됩니다. " +
+                        "소중한 시간 내어 주셔서 진심으로 감사드립니다!\n\n" +
+                        "[中文] 您好！我正在参与一项用户研究，旨在探索身边的人是如何看待我的 MBTI 性格类型的。 " +
+                        "作为研究的一部分，诚挚地邀请您填写您认为我属于哪种 MBTI 类型。 " +
+                        "您的回答将仅用于研究目的，并会被严格匿名处理。 " +
+                        "衷心感谢您的参与与支持！\n\n" +
+                        "Click 👇\n" + questionnaireUrl,
                     url: questionnaireUrl
                 }).then(() => {
                     console.log('Link shared successfully');
@@ -142,13 +148,20 @@
             } else {
                 // 📌 兼容方案：自动复制到剪贴板
                 const shareText =
-                    "[English] Hi, we are conducting a user study. It's about how different people perceive my MBTI. " +
-                    "And I would like to know what type of MBTI you think I am.\n\n" +
-                    "[한국어] 안녕하세요, 저희는 사용자 연구를 진행하고 있습니다. " +
-                    "다른 사람들이 제 MBTI를 어떻게 인식하는지에 대한 연구입니다. " +
-                    "그리고 저는 당신이 저를 어떤 유형의 MBTI라고 생각하는지 알고 싶습니다.\n\n" +
-                    "[中文] 您好，我们正在进行用户研究。这是一项关于其他人如何看待我的 MBTI 的研究，" +
-                    "我想知道您认为我属于哪种 MBTI 类型。\n\n Click 👇\n" + questionnaireUrl;
+                    "[English] Hello! I’m participating in a user study that explores how people around me perceive my MBTI personality type. " +
+                    "As part of this research, I would greatly appreciate it if you could share what MBTI type you think best describes me. " +
+                    "All responses will be used for research purposes only and will remain completely anonymous. " +
+                    "Thank you very much for your time and support!\n\n" +
+                    "[한국어] 안녕하세요! 저는 현재 사람들이 저의 MBTI 성격 유형을 어떻게 인식하는지를 알아보는 사용자 연구에 참여하고 있습니다. " +
+                    "연구의 일환으로, 저를 어떤 MBTI 유형이라고 생각하시는지 말씀해 주시면 감사하겠습니다. " +
+                    "응답해 주신 내용은 연구 목적으로만 사용되며, 완전히 익명으로 처리됩니다. " +
+                    "소중한 시간 내어 주셔서 진심으로 감사드립니다!\n\n" +
+                    "[中文] 您好！我正在参与一项用户研究，旨在探索身边的人是如何看待我的 MBTI 性格类型的。 " +
+                    "作为研究的一部分，诚挚地邀请您填写您认为我属于哪种 MBTI 类型。 " +
+                    "您的回答将仅用于研究目的，并会被严格匿名处理。 " +
+                    "衷心感谢您的参与与支持！\n\n" +
+                    "Click 👇\n" + questionnaireUrl;
+
 
                 navigator.clipboard.writeText(shareText).then(() => {
                     alert("📋 √");
