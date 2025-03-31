@@ -304,7 +304,7 @@ input:focus {
 
 /* 提交按钮优化 */
 button {
-    background: linear-gradient(135deg, #2489b8, #e995b8);
+    background: linear-gradient(135deg, #5B83B8, #FFD4EA);
     color: white;
     font-size: 16px;
     font-weight: bold;

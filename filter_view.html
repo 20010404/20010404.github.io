@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MBTI Filter View</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+    <!-- 加在 <head> 内 -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Quicksand:wght@400;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@1,700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=PT+Sans&family=PT Sans&display=swap');
+
+        body {
+            font-family: 'Poppins', 'PT Sans';
+            background-color: #f5f8fb;
+            color: #333;
+            text-align: center;
+        }
+
+        .dimension-tabs {
+            margin: 20px 0;
+        }
+
+        .tab {
+            padding: 10px 15px;
+            margin: 0 5px;
+            border: none;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #5B83B8, #FFD4EA);
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .tab.active {
+            box-shadow: 0 0 10px #e995b8;
+        }
+
+        .chart-container {
+            width: 70%;
+            height: 70%;
+            margin: 30px auto 10px;
+            background: linear-gradient(to bottom right, #ffffff, #f0f4f9);
+            border-radius: 16px;
+            padding: 25px 30px;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        #counts-container {
+            text-align: center;
+            font-size: 10px;
+            margin-top: 30px;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            padding: 0 10px;
+        }
+
+        #counts-container div {
+            background: linear-gradient(to right, #e0ecf9, #f3e0f9);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            color: #333;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+            transition: transform 0.2s;
+        }
+
+        #counts-container div:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+        }
+
+        #legend-container {
+            text-align: left;
+            margin-top: 10px;
+            font-size: 14px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+    </style>
+</head>
+
+<body>
+    <h2 id="mbti-title">MBTI Filter View</h2>
+
+    <div class="dimension-tabs">
+        <button class="tab active" data-dimension="IE">I/E</button>
+        <button class="tab" data-dimension="NS">N/S</button>
+        <button class="tab" data-dimension="FT">F/T</button>
+        <button class="tab" data-dimension="JP">J/P</button>
+        <button class="tab" data-dimension="ALL">ALL</button>
+    </div>
+
+    <div class="chart-container">
+        <div id="legend-container"></div>
+
+        <canvas id="mbtiFilterChart"></canvas>
+        <div id="counts-container"></div>
+
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getDatabase, ref, query, orderByChild, equalTo, get } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCvc9C5PuDqrI26jrmsg5b1PVOW6_k43W4",
+            authDomain: "mbti-kale.firebaseapp.com",
+            databaseURL: "https://mbti-kale-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "mbti-kale",
+            storageBucket: "mbti-kale.firebasestorage.app",
+            messagingSenderId: "756176954275",
+            appId: "1:756176954275:web:7581e5e485e426b33ff016",
+            measurementId: "G-B6F0F4JZ7E"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const urlParams = new URLSearchParams(window.location.search);
+        const username = urlParams.get("name");
+        const filterType = urlParams.get("filter");
+        const MyMBTI = urlParams.get("mbti");
+
+        let chart;
+        let allData = [];
+
+        const traitColors = {
+            IE: { I: '#01847F', E: '#F9D2E4' },
+            NS: { N: '#002FA7', S: '#FFE76F' },
+            FT: { F: '#FF770F', T: '#000026' },
+            JP: { J: '#6B946A', P: '#DDD23B' }
+        };
+
+        function getColorForLetter(letter) {
+            return (
+                traitColors.IE[letter] ||
+                traitColors.NS[letter] ||
+                traitColors.FT[letter] ||
+                traitColors.JP[letter] ||
+                '#999'
+            );
+        }
+
+        const coloredMBTI = MyMBTI.split("")
+            .map(char => `<span style="color:${getColorForLetter(char)}">${char}</span>`)
+            .join("");
+        document.getElementById("mbti-title").innerHTML = `<span style="color:#555">Your Type: </span>${coloredMBTI} `;
+        document.querySelectorAll(".tab").forEach(btn => {
+            btn.addEventListener("click", () => {
+                document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                drawChart(btn.dataset.dimension);
+            });
+        });
+
+        async function fetchData() {
+            const dbRef = ref(database, "responses");
+            const q = query(dbRef, orderByChild("username"), equalTo(username));
+            const snapshot = await get(q);
+            allData = [];
+
+            if (!snapshot.exists()) return;
+            snapshot.forEach(child => {
+                const d = child.val();
+                if (d.ie && d.ns && d.ft && d.jp) {
+                    allData.push({
+                        email: d.email,
+                        ie: d.ie,
+                        ns: d.ns,
+                        ft: d.ft,
+                        jp: d.jp,
+                        relationship: d.relationshipType || "Unknown",
+                        interaction: d.interactionPlace || "Unknown",
+                        familiarity: parseInt(d.intimacyGraph) || 1,
+                        familiarity2: parseInt(d.intimacyGraphReverse) || 1,
+                        filterValue: d[filterType] || "Unknown"
+                    });
+                }
+            });
+            drawChart("IE");
+        }
+
+        function drawChart(dimension) {
+            const ctx = document.getElementById("mbtiFilterChart").getContext("2d");
+            if (chart) chart.destroy();
+            if (dimension === "ALL") {
+                console.log("akk");
+                const centerX = 2, centerY = 2;
+                const myMBTI = MyMBTI.toUpperCase();
+
+                const distances = [];
+                const typeMap = {};
+
+                allData.forEach(d => {
+                    const type = (d.ie || '').toUpperCase()[0] +
+                        (d.ns || '').toUpperCase()[0] +
+                        (d.ft || '').toUpperCase()[0] +
+                        (d.jp || '').toUpperCase()[0];
+
+                    if (!type || type === "UNKN") return;
+                    let diff = 0;
+                    for (let i = 0; i < 4; i++) {
+                        if (type[i] !== myMBTI[i]) diff++;
+                    }
+
+                    if (!typeMap[type]) {
+                        typeMap[type] = { count: 0, familiarity2: 0, emails: [] };
+                    }
+                    typeMap[type].count++;
+                    typeMap[type].familiarity2 += d.familiarity2;
+                    typeMap[type].emails.push(d.email);
+                });
+
+                const labelColors = ["#114232", "#184D47", "#96BB7C", "#FAD586", "#C64756"];
+                console.log("akk3");
+                Object.entries(typeMap).forEach(([type, info]) => {
+                    let diff = 0;
+                    for (let i = 0; i < 4; i++) {
+                        if (type[i] !== myMBTI[i]) diff += 1;
+                    }
+                    console.log(type);
+                    const angle = Math.random() * 2 * Math.PI;
+                    distances.push({
+                        x: centerX + Math.cos(angle) * Math.sqrt(diff) * 1.4,
+                        y: centerY + Math.sin(angle) * Math.sqrt(diff) * 1.4,
+                        mbti: type,
+                        email: info.emails.join(", "),
+                        familiarity2: info.familiarity2,
+                        diff
+                    });
+                });
+                distances.push({
+                    x: centerX,
+                    y: centerY,
+                    mbti: MyMBTI,
+                    email: username,
+                    familiarity2: "7",
+                    diff: 0
+                });
+
+                try {
+                    chart = new Chart(ctx, {
+                        type: "scatter",
+                        data: {
+                            datasets: [{
+                                label: "MBTI Distance",
+                                data: distances,
+                                pointStyle: 'rectRot',
+                                pointRadius: 6,
+                                backgroundColor: "rgba(0,0,0,0)",
+                                datalabels: {
+                                    align: 'center',
+                                    anchor: 'center',
+                                    font: { size: 30 },
+                                    formatter: function (value, context) {
+                                        return value.mbti || "??";
+                                    },
+                                    color: function (context) {
+                                        const point = context.dataset.data[context.dataIndex];
+                                        const t = point.mbti;
+                                        if (!t) return "gray";
+                                        if (t === myMBTI) return "black";
+                                        let d = 0;
+                                        for (let i = 0; i < 4; i++) {
+                                            if (t[i] !== myMBTI[i]) d++;
+                                        }
+                                        return labelColors[d] || "gray";
+                                    }
+                                }
+                            }]
+                        },
+                        plugins: [ChartDataLabels],
+                        options: {
+                            plugins: {
+                                // datalabels: { display: true },
+                                tooltip: {
+                                    backgroundColor: '#fff',
+                                    titleColor: '#000',
+                                    bodyColor: '#333',
+                                    borderColor: '#ccc',
+                                    borderWidth: 1,
+                                    callbacks: {
+                                        label: context => [
+                                            `Name: ${context.raw.email}`,
+                                            `Your Familiarity: ${context.raw.familiarity2}`
+                                        ]
+                                    }
+                                },
+                                legend: { display: false }
+                            },
+                            scales: {
+                                x: { display: false, min: -2, max: 6 },
+                                y: { display: false, min: -2, max: 6 }
+                            }
+                        }
+                    });
+                } catch (err) {
+                    console.error("Chart rendering error:", err);
+                }
+
+                document.getElementById("legend-container").innerHTML =
+                    `<div><strong>ALL Mode:</strong>Differences from center  more, the distances are longer. Here are all the colloections of others.</div>`;
+                document.getElementById("counts-container").innerHTML = ``;
+                return;
+            }
+
+            const dimensionKey = dimension.toLowerCase();
+            const left = dimensionKey[0].toUpperCase();
+            const right = dimensionKey[1].toUpperCase();
+
+            const groups = [...new Set(allData.map(d => d.filterValue))];
+
+            const countMap = {};
+            const data = allData
+                .filter(d => d[dimensionKey])
+                .map(d => {
+                    const groupIndex = groups.indexOf(d.filterValue);
+                    const isRight = d[dimensionKey].toUpperCase() === right;
+                    const yValue = isRight ? 1 : 0;
+                    const jitterX = Math.random() * 0.3 - 0.15;
+                    const jitterY = Math.random() * 0.3 - 0.15;
+
+                    const key = `${groupIndex}-${yValue}`;
+                    countMap[key] = (countMap[key] || 0) + 1;
+
+                    return {
+                        x: groupIndex + jitterX,
+                        y: yValue + jitterY,
+                        email: d.email,
+                        backgroundColor: traitColors[dimension][d[dimensionKey].toUpperCase()] || "gray"
+                    };
+                });
+
+            chart = new Chart(ctx, {
+                type: "scatter",
+                data: {
+                    datasets: [{
+                        label: dimension + " Perceptions",
+                        data: data,
+                        backgroundColor: data.map(d => d.backgroundColor),
+                        pointRadius: 8
+                    }]
+                },
+                options: {
+                    scales: {
+
+                        x: {
+                            min: -0.5,
+                            max: groups.length,
+                            ticks: {
+                                callback: function (value) {
+                                    return groups[value] || "";
+                                },
+                                color: '#444',           // 字体颜色
+                                font: {
+                                    size: 14,              // 字体大小
+                                    family: 'Poppins'     // 字体（可选）
+                                }
+                            },
+                            title: { display: true, text: filterType },
+                            grid: {
+                                drawTicks: false,
+                                drawBorder: false,
+                                color: "transparent"
+                            },
+                        },
+                        y: {
+                            min: -0.2,
+                            max: 1.2,
+                            ticks: {
+                                callback: v => v === 0 ? left : v === 1 ? right : "",
+                                color: '#444',           // 字体颜色
+                                font: {
+                                    size: 14,              // 字体大小
+                                    family: 'Poppins'     // 字体（可选）
+                                }
+                            },
+                            grid: {
+                                drawTicks: false,
+                                drawBorder: false,
+                                color: "transparent"
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: context => {
+                                    const email = context.raw.email;
+                                    const fam2 = context.raw.familiarity2 || 1;
+                                    return [
+                                        `Name: ${email}`,
+                                        `Your Familiarity: ${fam2}`
+                                    ];
+                                }
+                            }
+                        },
+                        legend: { display: false }
+                    }
+                }
+            });
+
+            // Update legend
+            const legendContainer = document.getElementById("legend-container");
+            legendContainer.innerHTML = `<strong> Type Legend:</strong>`;
+            [left, right].forEach(type => {
+                const color = traitColors[dimension][type] || "gray";
+                const div = document.createElement("div");
+                div.innerHTML = `<span style="display:inline-block;width:12px;height:12px;background:${color};border-radius:50%;margin-right:8px"></span>${type}`;
+                legendContainer.appendChild(div);
+            });
+
+            // Update counts
+            const countsContainer = document.getElementById("counts-container");
+            countsContainer.innerHTML = "";
+            groups.forEach((group, index) => {
+                const countLeft = countMap[`${index}-0`] || 0;
+                const countRight = countMap[`${index}-1`] || 0;
+                const block = document.createElement("div");
+                block.innerHTML = `<strong>${group}</strong>: ${left}(${countLeft}) / ${right}(${countRight})`;
+                countsContainer.appendChild(block);
+            });
+        }
+
+        fetchData();
+    </script>
+</body>
+
+</html>

@@ -4,6 +4,187 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MBTI Explorer</title>
+    <link rel="stylesheet" href="style3.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to right, #ffffff, #f8f9fa);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .selection-container,
+        .result-container {
+            text-align: center;
+            transition: all 0.5s ease;
+        }
+
+        .mbti-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 80px);
+            /* 每行 4 个 */
+            grid-gap: 80px;
+            /* 间距 */
+            justify-content: center;
+            margin-bottom: 40px;
+        }
+
+        .mbti-option {
+            width: 120px;
+            height: 60px;
+            cursor: pointer;
+            color: #000000;
+            font-size: 20px;
+            border-radius: 1rem;
+            border: none;
+            position: relative;
+            background: #ffffff;
+            transition: 0.1s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .mbti-option::after {
+            content: '';
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(circle farthest-corner at 10% 20%, #FFD4EA 17.8%, #5B83B8 100.2%);
+            filter: blur(15px);
+            z-index: -1;
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+
+        .mbti-option:active {
+            transform: scale(0.9) rotate(3deg);
+            background-image: radial-gradient(circle farthest-corner at 10% 20%, #FFD4EA 17.8%, #5B83B8 100.2%);
+            transition: 0.5s;
+        }
+
+
+        /* .mbti-option:hover {
+            transform: scale(1.1);
+            border-color: #e995b8;
+            box-shadow: 0 0 10px #e995b8;
+        } */
+
+        .mbti-center {
+            font-size: 48px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #5B83B8, #FFD4EA);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 30px;
+        }
+
+        .buttons-ring {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .ring-button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 50px;
+            background: linear-gradient(135deg, #5B83B8, #FFD4EA);
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .ring-button:hover {
+            transform: scale(1.1);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="selection-container" id="selectionContainer">
+        <h2>Select Your MBTI Type<br> </h2>
+        <div class="mbti-grid">
+            <div class="mbti-option">ISTJ</div>
+            <div class="mbti-option">ISFJ</div>
+            <div class="mbti-option">INFJ</div>
+            <div class="mbti-option">INTJ</div>
+            <div class="mbti-option">ISTP</div>
+            <div class="mbti-option">ISFP</div>
+            <div class="mbti-option">INFP</div>
+            <div class="mbti-option">INTP</div>
+            <div class="mbti-option">ESTP</div>
+            <div class="mbti-option">ESFP</div>
+            <div class="mbti-option">ENFP</div>
+            <div class="mbti-option">ENTP</div>
+            <div class="mbti-option">ESTJ</div>
+            <div class="mbti-option">ESFJ</div>
+            <div class="mbti-option">ENFJ</div>
+            <div class="mbti-option">ENTJ</div>
+        </div>
+    </div>
+
+    <div class="result-container" id="resultContainer" style="display: none;">
+        <div class="mbti-center" id="selectedMbti"></div>
+        <div class="buttons-ring">
+            <button class="ring-button" onclick="goTo('relationshipType')">Relationship Type</button>
+            <button class="ring-button" onclick="goTo('interactionPlace')">Interaction Place</button>
+            <button class="ring-button" onclick="goTo('sinceWhen')">Known Time</button>
+            <button class="ring-button" onclick="goTo('intimacyGraph')">Familiarity Level</button>
+            <button class="ring-button" onclick="goTo('table')">All Data Table</button>
+        </div>
+    </div>
+
+    <script>
+        document.querySelectorAll('.mbti-option').forEach(option => {
+            option.addEventListener('click', () => {
+                const mbti = option.textContent;
+                document.getElementById('selectionContainer').style.display = 'none';
+                document.getElementById('resultContainer').style.display = 'block';
+                document.getElementById('selectedMbti').textContent = mbti;
+            });
+        });
+
+        function goTo(filterType) {
+            const mbti = document.getElementById('selectedMbti').textContent;
+            const urlParams = new URLSearchParams(window.location.search);
+            const username = urlParams.get("username");
+            window.location.href = `filter_view.html?mbti=${mbti}&filter=${filterType}&name=${username}`;
+        }
+    </script>
+</body>
+
+</html>
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My MBTI Report</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="switch_language.js" defer></script>
@@ -24,8 +205,10 @@
 </head>
 
 <body>
-    <h2>My MBTI Report</h2>
+    <h2>MBTI Report</h2>
     <p>This report shows the distribution of MBTI perception others have of you.</p>
+
+    <div id="typeStatsContainer"></div>
     <div class="filters">
         <label for="relationship-filter">Relationship Type:</label>
         <select id="relationship-filter">
@@ -87,6 +270,13 @@
         }
 
         dataPoints = [];
+        let ieCount = { "I": 0, "E": 0 };
+        let nsCount = { "N": 0, "S": 0 };
+        let tfCount = { "F": 0, "T": 0 };
+        let jpCount = { "J": 0, "P": 0 };
+
+
+
         snapshot.forEach((childSnapshot) => {
             const data = childSnapshot.val();
 
@@ -100,13 +290,17 @@
             let nsData = parseMBTI(data.ns);
             let ftData = parseMBTI(data.ft);
             let jpData = parseMBTI(data.jp);
-
+            ieCount[ieData.type]++;
+            nsCount[nsData.type]++;
+            tfCount[ftData.type]++;
+            jpCount[jpData.type]++;
             // 确定MBTI类型
             let mbtiType =
                 (ieData.type === "I" ? "I" : "E") +
                 (nsData.type === "N" ? "N" : "S") +
                 (ftData.type === "F" ? "F" : "T") +
                 (jpData.type === "J" ? "J" : "P");
+
 
             // 添加数据点
             dataPoints.push({
@@ -116,7 +310,15 @@
                 interaction: data.interactionPlace || "Other"
             });
         });
-
+        const typeStatsContainer = document.getElementById('typeStatsContainer');
+        typeStatsContainer.innerHTML = `
+    <ul style="list-style-type: disc; padding-left: 20px;">
+        <li><strong style="color: #E74C3C;">I/E:</strong> ${ieCount.I} people think you are I, ${ieCount.E} people think you are E</li>
+        <li><strong style="color: #3498DB;">N/S:</strong> ${nsCount.N} people think you are N, ${nsCount.S} people think you are S</li>
+        <li><strong style="color: #2ECC71;">T/F:</strong> ${tfCount.F} people think you are F, ${tfCount.T} people think you are T</li>
+        <li><strong style="color: #F39C12;">J/P:</strong> ${jpCount.J} people think you are J, ${jpCount.P} people think you are P</li>
+    </ul>
+`;
         populateFilterDropdowns();
         updateChart();
     }
@@ -194,6 +396,7 @@
             }),
             backgroundColor: filteredData.map(d => getColorForRelationship(d.relationship)),
             pointStyle: filteredData.map(d => getShapeForInteraction(d.interaction)),
+
         }];
 
         const ctx = document.getElementById("mbtiChart").getContext("2d");
@@ -271,9 +474,9 @@
 
     function getShapeForInteraction(place) {
         return {
-            "Virtual": "circle",
+            "Virtual": "square",
             "Mixed": "triangle",
-            "Physical": "star",
+            "Physical": "rect",
         }[place] || "circle";
     }
 
@@ -284,4 +487,4 @@
     fetchData();
 </script>
 
-</html>
+</html> -->

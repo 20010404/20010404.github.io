@@ -111,7 +111,7 @@ table {
 
 /* 表头样式 */
 thead {
-    background: linear-gradient(135deg, #2489b8, #e995b8);
+    background: linear-gradient(135deg, #5B83B8, #FFD4EA);
     /* 渐变背景 */
     color: white;
     font-weight: bold;
@@ -155,7 +155,7 @@ th {
 
 /* 按钮样式美化 */
 button {
-    background: linear-gradient(135deg, #2489b8, #e995b8);
+    background: linear-gradient(135deg, #5B83B8, #FFD4EA);
     color: white;
     font-size: 14px;
     font-weight: bold;
@@ -169,7 +169,7 @@ button {
 
 button:hover {
     transform: scale(1.05);
-    background: linear-gradient(135deg, #2489b8, #f72b80);
+    background: linear-gradient(135deg, #5B83B8, #FFD4EA);
 }
 
 .button-container {
