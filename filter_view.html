@@ -7,18 +7,26 @@
     <title>MBTI Filter View</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
-    <!-- 加在 <head> 内 -->
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Quicksand:wght@400;600&display=swap');
-        @import url('https://fonts.googleapis.com/css2?family=PT+Sans:ital,wght@1,700&display=swap');
-        @import url('https://fonts.googleapis.com/css2?family=PT+Sans&family=PT Sans&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
 
         body {
-            font-family: 'Poppins', 'PT Sans';
+            font-family: 'Poppins', sans-serif;
             background-color: #f5f8fb;
             color: #333;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             text-align: center;
+        }
+
+        .main-wrapper {
+            display: flex;
+            width: 80%;
+            flex-direction: column;
+            align-items: center;
         }
 
         .dimension-tabs {
@@ -42,68 +50,59 @@
 
         .chart-container {
             width: 70%;
-            height: 70%;
-            margin: 30px auto 10px;
+            margin: 0 auto;
             background: linear-gradient(to bottom right, #ffffff, #f0f4f9);
             border-radius: 16px;
             padding: 25px 30px;
             box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
         }
 
-        #counts-container {
-            text-align: center;
-            font-size: 10px;
-            margin-top: 30px;
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 16px;
-            padding: 0 10px;
-        }
-
-        #counts-container div {
-            background: linear-gradient(to right, #e0ecf9, #f3e0f9);
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-weight: bold;
-            color: #333;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-            transition: transform 0.2s;
-        }
-
-        #counts-container div:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
-        }
-
         #legend-container {
             text-align: left;
-            margin-top: 10px;
             font-size: 14px;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
+            margin-bottom: 10px;
+        }
+
+        .tooltip-dot {
+            position: relative;
+        }
+
+        .tooltip-dot:hover::after {
+            content: attr(data-tooltip);
+            width: 150px;
+            white-space: pre-line;
+            position: absolute;
+            top: -50px;
+            left: 0;
+            background: white;
+            border: 1px solid #ccc;
+            padding: 6px 10px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            font-size: 13px;
+            color: #333;
+            z-index: 10;
         }
     </style>
 </head>
 
 <body>
-    <h2 id="mbti-title">MBTI Filter View</h2>
+    <div class="main-wrapper">
+        <h2 id="mbti-title">MBTI Filter View</h2>
 
-    <div class="dimension-tabs">
-        <button class="tab active" data-dimension="IE">I/E</button>
-        <button class="tab" data-dimension="NS">N/S</button>
-        <button class="tab" data-dimension="FT">F/T</button>
-        <button class="tab" data-dimension="JP">J/P</button>
-        <button class="tab" data-dimension="ALL">ALL</button>
-    </div>
+        <div class="dimension-tabs">
+            <button class="tab active" data-dimension="IE">I/E</button>
+            <button class="tab" data-dimension="NS">N/S</button>
+            <button class="tab" data-dimension="FT">F/T</button>
+            <button class="tab" data-dimension="JP">J/P</button>
+            <button class="tab" data-dimension="ALL">ALL</button>
+        </div>
 
-    <div class="chart-container">
-        <div id="legend-container"></div>
-
-        <canvas id="mbtiFilterChart"></canvas>
-        <div id="counts-container"></div>
-
+        <div class="chart-container">
+            <div id="legend-container"></div>
+            <div id="counts-container"></div>
+            <div id="mbtiFilterTableContainer"></div>
+        </div>
     </div>
 
     <script type="module">
@@ -128,7 +127,6 @@
         const filterType = urlParams.get("filter");
         const MyMBTI = urlParams.get("mbti");
 
-        let chart;
         let allData = [];
 
         const traitColors = {
@@ -138,27 +136,21 @@
             JP: { J: '#6B946A', P: '#DDD23B' }
         };
 
-        function getColorForLetter(letter) {
-            return (
-                traitColors.IE[letter] ||
-                traitColors.NS[letter] ||
-                traitColors.FT[letter] ||
-                traitColors.JP[letter] ||
-                '#999'
-            );
-        }
+        const coloredMBTI = MyMBTI.split("").map(char => `<span style="color:${getColorForLetter(char)}">${char}</span>`).join("");
+        document.getElementById("mbti-title").innerHTML = `<span style="color:#555">Your Type: </span>${coloredMBTI}`;
 
-        const coloredMBTI = MyMBTI.split("")
-            .map(char => `<span style="color:${getColorForLetter(char)}">${char}</span>`)
-            .join("");
-        document.getElementById("mbti-title").innerHTML = `<span style="color:#555">Your Type: </span>${coloredMBTI} `;
         document.querySelectorAll(".tab").forEach(btn => {
             btn.addEventListener("click", () => {
                 document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
                 btn.classList.add("active");
-                drawChart(btn.dataset.dimension);
+                const dimension = btn.dataset.dimension;
+                drawChart(dimension);
             });
         });
+
+        function getColorForLetter(letter) {
+            return traitColors.IE[letter] || traitColors.NS[letter] || traitColors.FT[letter] || traitColors.JP[letter] || '#999';
+        }
 
         async function fetchData() {
             const dbRef = ref(database, "responses");
@@ -176,10 +168,11 @@
                         ns: d.ns,
                         ft: d.ft,
                         jp: d.jp,
-                        relationship: d.relationshipType || "Unknown",
-                        interaction: d.interactionPlace || "Unknown",
-                        familiarity: parseInt(d.intimacyGraph) || 1,
                         familiarity2: parseInt(d.intimacyGraphReverse) || 1,
+                        familiarity: d.intimacyGraph,
+                        relationshipType: d.relationshipType,
+                        sinceWhen: d.sinceWhen,
+                        interactionPlace: d.interactionPlace,
                         filterValue: d[filterType] || "Unknown"
                     });
                 }
@@ -188,245 +181,211 @@
         }
 
         function drawChart(dimension) {
-            const ctx = document.getElementById("mbtiFilterChart").getContext("2d");
-            if (chart) chart.destroy();
+            const container = document.getElementById("mbtiFilterTableContainer");
+            container.innerHTML = "";
+
             if (dimension === "ALL") {
-                console.log("akk");
-                const centerX = 2, centerY = 2;
                 const myMBTI = MyMBTI.toUpperCase();
+                const centerX = 300;
+                const centerY = 300;
 
-                const distances = [];
+                const colorMatch = "#333";  // 蓝绿色匹配色
+                const colorDiff = "#ff6b81";   // 不一致的维度色
+                const outerColors = ["#a6dff2", "#3eb5e1", "#1a79db", "#0e4e90", "#05465e"]; // 多种 pastel 外圈色
+
                 const typeMap = {};
-
                 allData.forEach(d => {
-                    const type = (d.ie || '').toUpperCase()[0] +
-                        (d.ns || '').toUpperCase()[0] +
-                        (d.ft || '').toUpperCase()[0] +
-                        (d.jp || '').toUpperCase()[0];
-
-                    if (!type || type === "UNKN") return;
+                    const type = `${d.ie[0]}${d.ns[0]}${d.ft[0]}${d.jp[0]}`.toUpperCase();
+                    if (!typeMap[type]) {
+                        typeMap[type] = { count: 0, emails: [], diff: 0, names: [] };
+                    }
+                    typeMap[type].count++;
+                    typeMap[type].emails.push(d.email);
+                    typeMap[type].names.push(`Familiarity: ${d.familiarity2}\n${filterType}: ${d[filterType]}`);
                     let diff = 0;
                     for (let i = 0; i < 4; i++) {
                         if (type[i] !== myMBTI[i]) diff++;
                     }
-
-                    if (!typeMap[type]) {
-                        typeMap[type] = { count: 0, familiarity2: 0, emails: [] };
-                    }
-                    typeMap[type].count++;
-                    typeMap[type].familiarity2 += d.familiarity2;
-                    typeMap[type].emails.push(d.email);
+                    typeMap[type].diff = diff;
                 });
 
-                const labelColors = ["#114232", "#184D47", "#96BB7C", "#FAD586", "#C64756"];
-                console.log("akk3");
-                Object.entries(typeMap).forEach(([type, info]) => {
-                    let diff = 0;
-                    for (let i = 0; i < 4; i++) {
-                        if (type[i] !== myMBTI[i]) diff += 1;
-                    }
-                    console.log(type);
-                    const angle = Math.random() * 2 * Math.PI;
-                    distances.push({
-                        x: centerX + Math.cos(angle) * Math.sqrt(diff) * 1.4,
-                        y: centerY + Math.sin(angle) * Math.sqrt(diff) * 1.4,
-                        mbti: type,
-                        email: info.emails.join(", "),
-                        familiarity2: info.familiarity2,
-                        diff
-                    });
-                });
-                distances.push({
-                    x: centerX,
-                    y: centerY,
-                    mbti: MyMBTI,
-                    email: username,
-                    familiarity2: "7",
-                    diff: 0
-                });
+                const canvas = document.createElement("canvas");
+                canvas.width = 600;
+                canvas.height = 600;
+                canvas.style.transition = "opacity 0.6s ease-in-out";
+                canvas.style.opacity = 0;
+                container.appendChild(canvas);
+                const ctx = canvas.getContext("2d");
 
-                try {
-                    chart = new Chart(ctx, {
-                        type: "scatter",
-                        data: {
-                            datasets: [{
-                                label: "MBTI Distance",
-                                data: distances,
-                                pointStyle: 'rectRot',
-                                pointRadius: 6,
-                                backgroundColor: "rgba(0,0,0,0)",
-                                datalabels: {
-                                    align: 'center',
-                                    anchor: 'center',
-                                    font: { size: 30 },
-                                    formatter: function (value, context) {
-                                        return value.mbti || "??";
-                                    },
-                                    color: function (context) {
-                                        const point = context.dataset.data[context.dataIndex];
-                                        const t = point.mbti;
-                                        if (!t) return "gray";
-                                        if (t === myMBTI) return "black";
-                                        let d = 0;
-                                        for (let i = 0; i < 4; i++) {
-                                            if (t[i] !== myMBTI[i]) d++;
-                                        }
-                                        return labelColors[d] || "gray";
-                                    }
-                                }
-                            }]
-                        },
-                        plugins: [ChartDataLabels],
-                        options: {
-                            plugins: {
-                                // datalabels: { display: true },
-                                tooltip: {
-                                    backgroundColor: '#fff',
-                                    titleColor: '#000',
-                                    bodyColor: '#333',
-                                    borderColor: '#ccc',
-                                    borderWidth: 1,
-                                    callbacks: {
-                                        label: context => [
-                                            `Name: ${context.raw.email}`,
-                                            `Your Familiarity: ${context.raw.familiarity2}`
-                                        ]
-                                    }
-                                },
-                                legend: { display: false }
-                            },
-                            scales: {
-                                x: { display: false, min: -2, max: 6 },
-                                y: { display: false, min: -2, max: 6 }
-                            }
-                        }
-                    });
-                } catch (err) {
-                    console.error("Chart rendering error:", err);
-                }
-
-                document.getElementById("legend-container").innerHTML =
-                    `<div><strong>ALL Mode:</strong>Differences from center  more, the distances are longer. Here are all the colloections of others.</div>`;
-                document.getElementById("counts-container").innerHTML = ``;
-                return;
-            }
-
-            const dimensionKey = dimension.toLowerCase();
-            const left = dimensionKey[0].toUpperCase();
-            const right = dimensionKey[1].toUpperCase();
-
-            const groups = [...new Set(allData.map(d => d.filterValue))];
-
-            const countMap = {};
-            const data = allData
-                .filter(d => d[dimensionKey])
-                .map(d => {
-                    const groupIndex = groups.indexOf(d.filterValue);
-                    const isRight = d[dimensionKey].toUpperCase() === right;
-                    const yValue = isRight ? 1 : 0;
-                    const jitterX = Math.random() * 0.3 - 0.15;
-                    const jitterY = Math.random() * 0.3 - 0.15;
-
-                    const key = `${groupIndex}-${yValue}`;
-                    countMap[key] = (countMap[key] || 0) + 1;
-
+                const sortedEntries = Object.entries(typeMap).sort((a, b) => a[1].diff - b[1].diff);
+                const points = sortedEntries.map(([type, data], index) => {
+                    const angle = (index / sortedEntries.length) * 2 * Math.PI;
+                    const distance = 80 + data.diff * 40;
                     return {
-                        x: groupIndex + jitterX,
-                        y: yValue + jitterY,
-                        email: d.email,
-                        backgroundColor: traitColors[dimension][d[dimensionKey].toUpperCase()] || "gray"
+                        x: centerX + Math.cos(angle) * distance,
+                        y: centerY + Math.sin(angle) * distance,
+                        type,
+                        emails: data.names.join("\n"),
+                        diff: data.diff,
+                        colorIndex: data.diff % outerColors.length
                     };
                 });
 
-            chart = new Chart(ctx, {
-                type: "scatter",
-                data: {
-                    datasets: [{
-                        label: dimension + " Perceptions",
-                        data: data,
-                        backgroundColor: data.map(d => d.backgroundColor),
-                        pointRadius: 8
-                    }]
-                },
-                options: {
-                    scales: {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                        x: {
-                            min: -0.5,
-                            max: groups.length,
-                            ticks: {
-                                callback: function (value) {
-                                    return groups[value] || "";
-                                },
-                                color: '#444',           // 字体颜色
-                                font: {
-                                    size: 14,              // 字体大小
-                                    family: 'Poppins'     // 字体（可选）
-                                }
-                            },
-                            title: { display: true, text: filterType },
-                            grid: {
-                                drawTicks: false,
-                                drawBorder: false,
-                                color: "transparent"
-                            },
-                        },
-                        y: {
-                            min: -0.2,
-                            max: 1.2,
-                            ticks: {
-                                callback: v => v === 0 ? left : v === 1 ? right : "",
-                                color: '#444',           // 字体颜色
-                                font: {
-                                    size: 14,              // 字体大小
-                                    family: 'Poppins'     // 字体（可选）
-                                }
-                            },
-                            grid: {
-                                drawTicks: false,
-                                drawBorder: false,
-                                color: "transparent"
-                            }
-                        }
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: context => {
-                                    const email = context.raw.email;
-                                    const fam2 = context.raw.familiarity2 || 1;
-                                    return [
-                                        `Name: ${email}`,
-                                        `Your Familiarity: ${fam2}`
-                                    ];
-                                }
-                            }
-                        },
-                        legend: { display: false }
+                let i = 0;
+                function drawNext() {
+                    if (i >= points.length) return;
+                    const p = points[i];
+
+                    // 背景圈
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 38, 0, 2 * Math.PI);
+                    ctx.fillStyle = "#ffffff";
+                    ctx.fill();
+                    ctx.strokeStyle = outerColors[p.colorIndex];
+                    ctx.lineWidth = 4;
+                    ctx.shadowColor = "rgba(0, 0, 0, 0.15)";
+                    ctx.shadowBlur = 10;
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+
+                    // 字母着色
+                    for (let j = 0; j < 4; j++) {
+                        ctx.fillStyle = p.type[j] !== myMBTI[j] ? colorDiff : colorMatch;
+                        ctx.font = "bold 15px Poppins";
+                        ctx.textAlign = "center";
+                        ctx.textBaseline = "middle";
+                        ctx.fillText(p.type[j], p.x - 18 + j * 12, p.y);
                     }
+
+                    // diff 值
+                    ctx.fillStyle = "#888";
+                    ctx.font = "12px Poppins";
+                    ctx.fillText(`${p.diff} diff`, p.x, p.y + 26);
+
+                    i++;
+                    setTimeout(drawNext, 200);
                 }
+
+                drawNext();
+                setTimeout(() => {
+                    canvas.style.opacity = 1;
+                }, 200);
+
+                // 中心圆圈
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, 50, 0, 2 * Math.PI);
+                ctx.fillStyle = "#fff";
+                ctx.fill();
+                ctx.strokeStyle = "#a6dff2";
+                ctx.lineWidth = 3;
+                ctx.stroke();
+                ctx.fillStyle = "#a6dff2";
+                ctx.font = "bold 25px Poppins";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(myMBTI, centerX, centerY);
+
+                // Tooltip
+                const tooltip = document.createElement("div");
+                Object.assign(tooltip.style, {
+                    position: "absolute",
+                    padding: "10px 14px",
+                    background: "rgba(255,255,255,0.95)",
+                    border: "1px solid #ccc",
+                    borderRadius: "8px",
+                    boxShadow: "0 4px 10px rgba(0,0,0,0.15)",
+                    fontSize: "13px",
+                    fontFamily: "Poppins, sans-serif",
+                    color: "#222",
+                    whiteSpace: "pre-line",
+                    display: "none",
+                    pointerEvents: "none",
+                    zIndex: 1000
+                });
+                document.body.appendChild(tooltip);
+
+                canvas.addEventListener("mousemove", e => {
+                    const rect = canvas.getBoundingClientRect();
+                    const mx = e.clientX - rect.left;
+                    const my = e.clientY - rect.top;
+
+                    let found = false;
+                    for (const pt of points) {
+                        if (Math.hypot(mx - pt.x, my - pt.y) <= 38) {
+                            tooltip.textContent = pt.emails;
+                            tooltip.style.left = `${e.pageX + 12}px`;
+                            tooltip.style.top = `${e.pageY + 12}px`;
+                            tooltip.style.display = "block";
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        tooltip.style.display = "none";
+                    }
+                });
+
+                canvas.addEventListener("mouseleave", () => {
+                    tooltip.style.display = "none";
+                });
+
+                return;
+            }
+
+
+            const values = [...new Set(allData.map(d => d.filterValue))];
+            const left = dimension[0];
+            const right = dimension[1];
+            const dimKey = dimension.toLowerCase();
+
+            const table = document.createElement("table");
+            table.style.width = "100%";
+            table.style.borderCollapse = "collapse";
+            table.style.marginTop = "20px";
+            table.style.fontFamily = "Poppins, sans-serif";
+
+            const headerRow = document.createElement("tr");
+            headerRow.innerHTML = `<th></th>` + values.map(v => `<th>${v}</th>`).join("");
+            table.appendChild(headerRow);
+
+            [left, right].forEach(side => {
+                const row = document.createElement("tr");
+                const rowHeader = document.createElement("td");
+                rowHeader.textContent = side;
+                rowHeader.style.fontWeight = "bold";
+                row.appendChild(rowHeader);
+
+                values.forEach(val => {
+                    const cell = document.createElement("td");
+                    cell.style.border = "1px solid #ccc";
+                    cell.style.padding = "10px";
+                    cell.style.minHeight = "50px";
+
+                    const dots = allData.filter(d => d[dimKey].toUpperCase() === side && d.filterValue === val);
+                    dots.forEach(dot => {
+                        const div = document.createElement("div");
+                        div.className = "tooltip-dot";
+                        div.setAttribute("data-tooltip", `Name: ${dot.email}
+Your Familiarity: ${dot.familiarity2}`);
+                        div.style.width = "10px";
+                        div.style.height = "10px";
+                        div.style.borderRadius = "50%";
+                        div.style.margin = "2px";
+                        div.style.backgroundColor = traitColors[dimension][side] || "gray";
+                        div.style.display = "inline-block";
+                        div.style.cursor = "pointer";
+                        cell.appendChild(div);
+                    });
+
+                    row.appendChild(cell);
+                });
+
+                table.appendChild(row);
             });
 
-            // Update legend
-            const legendContainer = document.getElementById("legend-container");
-            legendContainer.innerHTML = `<strong> Type Legend:</strong>`;
-            [left, right].forEach(type => {
-                const color = traitColors[dimension][type] || "gray";
-                const div = document.createElement("div");
-                div.innerHTML = `<span style="display:inline-block;width:12px;height:12px;background:${color};border-radius:50%;margin-right:8px"></span>${type}`;
-                legendContainer.appendChild(div);
-            });
-
-            // Update counts
-            const countsContainer = document.getElementById("counts-container");
-            countsContainer.innerHTML = "";
-            groups.forEach((group, index) => {
-                const countLeft = countMap[`${index}-0`] || 0;
-                const countRight = countMap[`${index}-1`] || 0;
-                const block = document.createElement("div");
-                block.innerHTML = `<strong>${group}</strong>: ${left}(${countLeft}) / ${right}(${countRight})`;
-                countsContainer.appendChild(block);
-            });
+            container.appendChild(table);
         }
 
         fetchData();
