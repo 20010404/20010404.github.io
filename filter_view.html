@@ -69,7 +69,7 @@
 
         .tooltip-dot:hover::after {
             content: attr(data-tooltip);
-            width: 150px;
+            width: 200px;
             white-space: pre-line;
             position: absolute;
             top: -50px;
@@ -169,11 +169,11 @@
                         ft: d.ft,
                         jp: d.jp,
                         familiarity2: parseInt(d.intimacyGraphReverse) || 1,
-                        familiarity: d.intimacyGraph,
+                        intimacyGraph: parseInt(d.intimacyGraph) || 1,
                         relationshipType: d.relationshipType,
                         sinceWhen: d.sinceWhen,
                         interactionPlace: d.interactionPlace,
-                        filterValue: d[filterType] || "Unknown"
+                        filterValue: d[filterType] || " "
                     });
                 }
             });
@@ -201,7 +201,16 @@
                     }
                     typeMap[type].count++;
                     typeMap[type].emails.push(d.email);
-                    typeMap[type].names.push(`Familiarity: ${d.familiarity2}\n${filterType}: ${d[filterType]}`);
+                    if (filterType == "table") {
+                        typeMap[type].names.push(`Name : ${d.email}\n Your Familiarity to him/her : ${d.familiarity2}\n His/her familariyty to you: ${d.intimacyGraph}\n relationship type: ${d.relationshipType}\n Known years: ${d.sinceWhen}\n Interaction place: ${d.interactionPlace}\n`);
+                    }
+                    else if (filterType == "intimacyGraph") {
+                        typeMap[type].names.push(`Name : ${d.email}\n Your Familiarity to him/her: ${d.familiarity2}\n His/her familariyty to you: ${d[filterType]}`);
+                    }
+                    else {
+                        typeMap[type].names.push(`Name : ${d.email}\n Your Familiarity to him/her: ${d.familiarity2}\n ${filterType}: ${d[filterType]}`);
+                    }
+
                     let diff = 0;
                     for (let i = 0; i < 4; i++) {
                         if (type[i] !== myMBTI[i]) diff++;
