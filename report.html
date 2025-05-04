@@ -1,5 +1,163 @@
 <!DOCTYPE html>
 <html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MBTI Trait Selector</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(to right, #ffffff, #f8f9fa);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      font-family: sans-serif;
+    }
+
+    .container {
+      text-align: center;
+      transition: all 0.5s ease;
+    }
+
+    .trait-group {
+      margin-bottom: 30px;
+    }
+
+    .trait-label {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #333;
+    }
+
+    .trait-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 40px;
+    }
+
+    .trait-option {
+      width: 80px;
+      height: 60px;
+      cursor: pointer;
+      font-size: 24px;
+      border-radius: 1rem;
+      border: none;
+      color: white;
+      font-weight: bold;
+      position: relative;
+      transition: 0.2s;
+    }
+
+    .trait-option:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .trait-option:active {
+      transform: scale(0.9);
+    }
+
+    .trait-option.selected {
+      outline: none;
+      box-shadow:
+        0 0 10px rgba(0, 0, 0, 0.2),
+        0 0 15px currentColor,
+        inset 0 0 10px rgba(255, 255, 255, 0.3);
+      transform: scale(1.05);
+      border: 2px solid black;
+    }
+
+    .go-button {
+      padding: 14px 30px;
+      border: none;
+      border-radius: 50px;
+      background: black;
+      color: white;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      display: none;
+      margin-top: 30px;
+      transition: transform 0.3s ease;
+    }
+
+    .go-button:hover {
+      transform: scale(1.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="step1">
+    <h2>Select Your MBTI Traits</h2>
+    <div class="trait-group" data-dimension="IE">
+      <div class="trait-label">Introversion / Extraversion</div>
+      <div class="trait-buttons">
+        <button class="trait-option" data-trait="I" style="background:#01847F;">I</button>
+        <button class="trait-option" data-trait="E" style="background:#F9D2E4; color:black;">E</button>
+      </div>
+    </div>
+    <div class="trait-group" data-dimension="NS">
+      <div class="trait-label">iNtuition / Sensing</div>
+      <div class="trait-buttons">
+        <button class="trait-option" data-trait="N" style="background:#002FA7;">N</button>
+        <button class="trait-option" data-trait="S" style="background:#FFE76F; color:black;">S</button>
+      </div>
+    </div>
+    <div class="trait-group" data-dimension="FT">
+      <div class="trait-label">Feeling / Thinking</div>
+      <div class="trait-buttons">
+        <button class="trait-option" data-trait="F" style="background:#FF770F;">F</button>
+        <button class="trait-option" data-trait="T" style="background:#000026;">T</button>
+      </div>
+    </div>
+    <div class="trait-group" data-dimension="JP">
+      <div class="trait-label">Judging / Perceiving</div>
+      <div class="trait-buttons">
+        <button class="trait-option" data-trait="J" style="background:#6B946A;">J</button>
+        <button class="trait-option" data-trait="P" style="background:#DDD23B; color:black;">P</button>
+      </div>
+    </div>
+    <button class="go-button" id="goButton" onclick="goToReport()">Go to My Report</button>
+  </div>
+
+  <script>
+    const selectedTraits = {};
+    const requiredDimensions = ['IE', 'NS', 'FT', 'JP'];
+
+    document.querySelectorAll('.trait-option').forEach(button => {
+      button.addEventListener('click', () => {
+        const dimension = button.closest('.trait-group').dataset.dimension;
+        button.closest('.trait-buttons').querySelectorAll('.trait-option').forEach(btn => {
+          btn.classList.remove('selected');
+        });
+        button.classList.add('selected');
+        selectedTraits[dimension] = button.dataset.trait;
+        checkAllSelected();
+      });
+    });
+
+    function checkAllSelected() {
+      const allSelected = requiredDimensions.every(d => selectedTraits[d]);
+      document.getElementById('goButton').style.display = allSelected ? 'inline-block' : 'none';
+    }
+
+    function goToReport() {
+      const mbti = selectedTraits.IE + selectedTraits.NS + selectedTraits.FT + selectedTraits.JP;
+      const urlParams = new URLSearchParams(window.location.search);
+      const username = urlParams.get("username") || "anonymous";
+      window.location.href = `filter_view.html?mbti=${mbti}&filter=ALL&name=${username}`;
+    }
+  </script>
+</body>
+</html>
+
+
+<!-- <!DOCTYPE html>
+<html lang="en">
 
 <head>
     <meta charset="UTF-8">
@@ -176,4 +334,4 @@
     </script>
 </body>
 
-</html>
+</html> -->
