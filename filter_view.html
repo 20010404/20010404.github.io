@@ -1,771 +1,983 @@
-    <!DOCTYPE html>
-    <html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>MBTI Filter View</title>
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <script type="module">
-            import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
-            import { getDatabase, ref, query, orderByChild, equalTo, get } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MBTI Filter View</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- 先引入 Chart.js UMD 全局版 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- 再引入 DataLabels 插件的 UMD 版 -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getDatabase, ref, query, orderByChild, equalTo, get } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+        Chart.register(ChartDataLabels);
+        const firebaseConfig = {
+            apiKey: "AIzaSyCvc9C5PuDqrI26jrmsg5b1PVOW6_k43W4",
+            authDomain: "mbti-kale.firebaseapp.com",
+            databaseURL: "https://mbti-kale-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "mbti-kale",
+            storageBucket: "mbti-kale.firebasestorage.app",
+            messagingSenderId: "756176954275",
+            appId: "1:756176954275:web:7581e5e485e426b33ff016",
+            measurementId: "G-B6F0F4JZ7E"
+        };
 
-            const firebaseConfig = {
-                apiKey: "AIzaSyCvc9C5PuDqrI26jrmsg5b1PVOW6_k43W4",
-                authDomain: "mbti-kale.firebaseapp.com",
-                databaseURL: "https://mbti-kale-default-rtdb.asia-southeast1.firebasedatabase.app",
-                projectId: "mbti-kale",
-                storageBucket: "mbti-kale.firebasestorage.app",
-                messagingSenderId: "756176954275",
-                appId: "1:756176954275:web:7581e5e485e426b33ff016",
-                measurementId: "G-B6F0F4JZ7E"
-            };
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const urlParams = new URLSearchParams(window.location.search);
+        const username = urlParams.get("name");
+        const filterType = urlParams.get("filter") || "relationshipType";
+        const MyMBTI = urlParams.get("mbti") || "ENFP";
+        // 在你的脚本里（确保在 MyMBTI 已经有值后运行）：
+        const legendConfig = [
+        { code: 'I/E', keys: ['I','E'], labels: ['Introverted','Extroverted'], css: 'ie-color' },
+        { code: 'N/S', keys: ['N','S'], labels: ['Intuitive','Sensing'],    css: 'ns-color' },
+        { code: 'F/T', keys: ['F','T'], labels: ['Feeling','Thinking'],    css: 'ft-color' },
+        { code: 'J/P', keys: ['J','P'], labels: ['Judging','Perceiving'], css: 'jp-color' }
+        ];
 
-            const app = initializeApp(firebaseConfig);
-            const database = getDatabase(app);
-            const urlParams = new URLSearchParams(window.location.search);
-            const username = urlParams.get("name");
-            const filterType = urlParams.get("filter") || "relationshipType";
-            const MyMBTI = urlParams.get("mbti") || "ENFP";
+      
+        let allData = [];
 
-            let allData = [];
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Update the MBTI title with the user's MBTI type from URL
+            const mbtiParts = MyMBTI.split('');
+            document.getElementById("mbti-title").innerHTML = `Your MBTI Type: <span class="mbti-highlight">${mbtiParts.join('')}</span>`;
+            
+            await fetchData();
+            processData();
+        });
 
-            document.addEventListener('DOMContentLoaded', async function() {
-                // Update the MBTI title with the user's MBTI type from URL
-                const mbtiParts = MyMBTI.split('');
-                document.getElementById("mbti-title").innerHTML = `Your MBTI Type: <span class="mbti-highlight">${mbtiParts.join('')}</span>`;
+        async function fetchData() {
+            try {
+                const dbRef = ref(database, "responses");
+                const q = query(dbRef, orderByChild("username"), equalTo(username));
+                const snapshot = await get(q);
+                allData = [];
+
+                if (!snapshot.exists()) {
+                    console.log("No data found for this username");
+                    document.querySelector(".summary-title").innerHTML = "No data found for this username";
+                    return;
+                }
                 
-                await fetchData();
-                processData();
+                snapshot.forEach(child => {
+                    const d = child.val();
+                    if (d.ie && d.ns && d.ft && d.jp) {
+                        // Directly create MBTI type from the string values
+                        const mbtiType = d.ie + d.ns + d.ft + d.jp;
+                        
+                        // Convert string values to numerical for charts
+                        const ieVal = d.ie === "I" ? -1 : 1;
+                        const nsVal = d.ns === "N" ? -1 : 1;
+                        const ftVal = d.ft === "F" ? -1 : 1;
+                        const jpVal = d.jp === "J" ? -1 : 1;
+                        
+                        allData.push({
+                            email: d.email,
+                            ie: ieVal,
+                            ns: nsVal,
+                            ft: ftVal,
+                            jp: jpVal,
+                            ieStr: d.ie,
+                            nsStr: d.ns,
+                            ftStr: d.ft,
+                            jpStr: d.jp,
+                            mbtiType: mbtiType,
+                            familiarity: parseInt(d.intimacyGraphReverse) || 1,
+                            intimacy: parseInt(d.intimacyGraph) || 1,
+                            relationshipType: d.relationshipType || "Unknown",
+                            sinceWhen: d.sinceWhen || "Unknown",
+                            interactionPlace: d.interactionPlace || "Unknown",
+                            filterValue: d[filterType] || "Unknown"
+                        });
+                        
+                        console.log("Processed data entry:", mbtiType, ieVal, nsVal, ftVal, jpVal);
+                    }
+                });
+                
+                console.log("Fetched data:", allData);
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                document.querySelector(".summary-title").innerHTML = "Error fetching data: " + error.message;
+            }
+        }
+
+        // This function is no longer needed as we're using the string values directly
+        // Keeping it here in case we need to convert numerical values to MBTI strings in the future
+        function getMBTIFromTraits(ie, ns, ft, jp) {
+            if (typeof ie === 'string') return ie + ns + ft + jp;
+            
+            return (ie < 0 ? "I" : "E") + 
+                (ns < 0 ? "N" : "S") + 
+                (ft < 0 ? "F" : "T") + 
+                (jp < 0 ? "J" : "P");
+        }
+
+        function processData() {
+            if (allData.length === 0) return;
+            
+            // Calculate MBTI type distribution
+            const mbtiCounts = {};
+            allData.forEach(person => {
+                const type = person.mbtiType;
+                mbtiCounts[type] = (mbtiCounts[type] || 0) + 1;
+            });
+            
+            // Calculate trait statistics
+            let iCount = 0, eCount = 0, nCount = 0, sCount = 0, fCount = 0, tCount = 0, jCount = 0, pCount = 0;
+            allData.forEach(person => {
+                if (person.ieStr === "I") iCount++;
+                if (person.ieStr === "E") eCount++;
+                if (person.nsStr === "N") nCount++;
+                if (person.nsStr === "S") sCount++;
+                if (person.ftStr === "F") fCount++;
+                if (person.ftStr === "T") tCount++;
+                if (person.jpStr === "J") jCount++;
+                if (person.jpStr === "P") pCount++;
+            });
+            
+            const total = allData.length;
+            const iPercent = Math.round((iCount / total) * 100);
+            const ePercent = Math.round((eCount / total) * 100);
+            const nPercent = Math.round((nCount / total) * 100);
+            const sPercent = Math.round((sCount / total) * 100);
+            const fPercent = Math.round((fCount / total) * 100);
+            const tPercent = Math.round((tCount / total) * 100);
+            const jPercent = Math.round((jCount / total) * 100);
+            const pPercent = Math.round((pCount / total) * 100);
+            
+            // Find most common mistype
+            const mistypes = {};
+            allData.forEach(person => {
+                if (person.mbtiType !== MyMBTI) {
+                    mistypes[person.mbtiType] = (mistypes[person.mbtiType] || 0) + 1;
+                }
             });
 
-            async function fetchData() {
-                try {
-                    const dbRef = ref(database, "responses");
-                    const q = query(dbRef, orderByChild("username"), equalTo(username));
-                    const snapshot = await get(q);
-                    allData = [];
-
-                    if (!snapshot.exists()) {
-                        console.log("No data found for this username");
-                        document.querySelector(".summary-title").innerHTML = "No data found for this username";
-                        return;
-                    }
-                    
-                    snapshot.forEach(child => {
-                        const d = child.val();
-                        if (d.ie && d.ns && d.ft && d.jp) {
-                            // Directly create MBTI type from the string values
-                            const mbtiType = d.ie + d.ns + d.ft + d.jp;
-                            
-                            // Convert string values to numerical for charts
-                            const ieVal = d.ie === "I" ? -1 : 1;
-                            const nsVal = d.ns === "N" ? -1 : 1;
-                            const ftVal = d.ft === "F" ? -1 : 1;
-                            const jpVal = d.jp === "J" ? -1 : 1;
-                            
-                            allData.push({
-                                email: d.email,
-                                ie: ieVal,
-                                ns: nsVal,
-                                ft: ftVal,
-                                jp: jpVal,
-                                ieStr: d.ie,
-                                nsStr: d.ns,
-                                ftStr: d.ft,
-                                jpStr: d.jp,
-                                mbtiType: mbtiType,
-                                familiarity: parseInt(d.intimacyGraphReverse) || 1,
-                                intimacy: parseInt(d.intimacyGraph) || 1,
-                                relationshipType: d.relationshipType || "Unknown",
-                                sinceWhen: d.sinceWhen || "Unknown",
-                                interactionPlace: d.interactionPlace || "Unknown",
-                                filterValue: d[filterType] || "Unknown"
-                            });
-                            
-                            console.log("Processed data entry:", mbtiType, ieVal, nsVal, ftVal, jpVal);
-                        }
-                    });
-                    
-                    console.log("Fetched data:", allData);
-                } catch (error) {
-                    console.error("Error fetching data:", error);
-                    document.querySelector(".summary-title").innerHTML = "Error fetching data: " + error.message;
-                }
+            let mostCommonMistype = "None";
+            const entries = Object.entries(mistypes);
+            if (entries.length > 0) {
+                const maxValue = Math.max(...entries.map(([_, val]) => val));
+                const topTypes = entries.filter(([_, val]) => val === maxValue).map(([key]) => key);
+                mostCommonMistype = topTypes.length === 1 ? topTypes[0] :  topTypes.join(", ");
             }
 
-            // This function is no longer needed as we're using the string values directly
-            // Keeping it here in case we need to convert numerical values to MBTI strings in the future
-            function getMBTIFromTraits(ie, ns, ft, jp) {
-                if (typeof ie === 'string') return ie + ns + ft + jp;
-                
-                return (ie < 0 ? "I" : "E") + 
-                    (ns < 0 ? "N" : "S") + 
-                    (ft < 0 ? "F" : "T") + 
-                    (jp < 0 ? "J" : "P");
-            }
-
-            function processData() {
-                if (allData.length === 0) return;
-                
-                // Calculate MBTI type distribution
-                const mbtiCounts = {};
-                allData.forEach(person => {
-                    const type = person.mbtiType;
-                    mbtiCounts[type] = (mbtiCounts[type] || 0) + 1;
-                });
-                
-                // Calculate trait statistics
-                let iCount = 0, eCount = 0, nCount = 0, sCount = 0, fCount = 0, tCount = 0, jCount = 0, pCount = 0;
-                allData.forEach(person => {
-                    if (person.ieStr === "I") iCount++;
-                    if (person.ieStr === "E") eCount++;
-                    if (person.nsStr === "N") nCount++;
-                    if (person.nsStr === "S") sCount++;
-                    if (person.ftStr === "F") fCount++;
-                    if (person.ftStr === "T") tCount++;
-                    if (person.jpStr === "J") jCount++;
-                    if (person.jpStr === "P") pCount++;
-                });
-                
-                const total = allData.length;
-                const iPercent = Math.round((iCount / total) * 100);
-                const ePercent = Math.round((eCount / total) * 100);
-                const nPercent = Math.round((nCount / total) * 100);
-                const sPercent = Math.round((sCount / total) * 100);
-                const fPercent = Math.round((fCount / total) * 100);
-                const tPercent = Math.round((tCount / total) * 100);
-                const jPercent = Math.round((jCount / total) * 100);
-                const pPercent = Math.round((pCount / total) * 100);
-                
-                // Find most common mistype
-                const mistypes = {};
-                allData.forEach(person => {
-                    if (person.mbtiType !== MyMBTI) {
-                        mistypes[person.mbtiType] = (mistypes[person.mbtiType] || 0) + 1;
-                    }
-                });
-
-                let mostCommonMistype = "None";
-                const entries = Object.entries(mistypes);
-                if (entries.length > 0) {
-                    const maxValue = Math.max(...entries.map(([_, val]) => val));
-                    const topTypes = entries.filter(([_, val]) => val === maxValue).map(([key]) => key);
-                    mostCommonMistype = topTypes.length === 1 ? topTypes[0] :  topTypes.join(", ");
-                }
-
-                
-                // Calculate average traits for comparison chart
-                let avgIE = 0, avgNS = 0, avgFT = 0, avgJP = 0;
-                allData.forEach(person => {
-                    avgIE += person.ie;
-                    avgNS += person.ns;
-                    avgFT += person.ft;
-                    avgJP += person.jp;
-                });
-                
-                avgIE /= allData.length;
-                avgNS /= allData.length;
-                avgFT /= allData.length;
-                avgJP /= allData.length;
-                
-                // Calculate perception by relationship
-                const relationshipPerception = {};
-                allData.forEach(person => {
-                    const rel = person.relationshipType;
-                    if (!relationshipPerception[rel]) {
-                        relationshipPerception[rel] = {
-                            types: {},
-                            count: 0
-                        };
-                    }
-                    relationshipPerception[rel].count++;
-                    relationshipPerception[rel].types[person.mbtiType] = 
-                        (relationshipPerception[rel].types[person.mbtiType] || 0) + 1;
-                });
-                
-                // Update UI
-                updateSummary(allData.length, allData.filter(p => p.mbtiType !== MyMBTI).length, 
-                            mostCommonMistype, iPercent, ePercent, nPercent, sPercent, 
-                            fPercent, tPercent, jPercent, pPercent);
-                
-                drawMBTIVisualization(mbtiCounts);
-                drawTraitComparisonChart(avgIE, avgNS, avgFT, avgJP);
-                updateFilterSections();
-
-            }
-
-            function updateSummary(totalCount, mistypeCount, mostCommonMistype, 
-                                iPercent, ePercent, nPercent, sPercent, 
-                                fPercent, tPercent, jPercent, pPercent) {
-
-                
-                const summaryElem = document.querySelector(".summary-title");
-
-                if (mistypeCount === 0) {
-                    summaryElem.innerHTML = `<span class="mbti-highlight">Everyone</span> perceived you as your type.`;
-                } else {
-                    summaryElem.innerHTML = 
-                        `<span class="mbti-highlight">${mistypeCount}</span> out of <span class="mbti-highlight">${totalCount}</span> people perceive you 
-                        <span class="mbti-highlight">not your type</span>, 
-                        the most common mistypes are <span class="mbti-highlight">${mostCommonMistype}</span>.`;
-                }
-                // Create the slider-like visualization for each trait pair
-                const summaryList = document.querySelector(".summary-list");
-                summaryList.innerHTML = `<li><canvas id="summaryChart" width="300" height="300"></canvas></li>`;
-                // Determine the four core percentages based on your MBTI
-                const dataPoints = [
-                    MyMBTI[0] === 'I' ? iPercent : ePercent,
-                    MyMBTI[1] === 'N' ? nPercent : sPercent,
-                    MyMBTI[2] === 'F' ? fPercent : tPercent,
-                    MyMBTI[3] === 'J' ? jPercent : pPercent
-                ];
-
-                const ctx = document.getElementById('summaryChart').getContext('2d');
-                // Destroy existing chart if present
-                if (window.summaryRadar) window.summaryRadar.destroy();
-
-                // Create the radar chart
-                window.summaryRadar = new Chart(ctx, {
-                    type: 'radar',
-                    data: {
-                    labels: [MyMBTI[0] , MyMBTI[1] , MyMBTI[2] , MyMBTI[3] ],
-                    datasets: [{
-                        label: '% of matching perceptions: ',
-                        data: dataPoints,
-                        backgroundColor: 'rgba(32,50,112,0.2)',
-                        borderColor: '#203270',
-                        pointBackgroundColor: '#203270',
-                        pointBorderColor: '#fff',
-                        pointRadius: 5,
-                        borderWidth: 2
-                    }]
-                    },
-                    options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    aspectRatio: 1,
-                    scales: {
-                        r: {
-                        beginAtZero: true,
-                        max: 100,
-                        ticks: { stepSize: 20, font: { size: 15 } },
-                        grid: { color: '#e0e0e0' },
-                        angleLines: { color: '#e0e0e0' },
-                        pointLabels: {
-                            font: { family: 'Poppins', size: 15 },
-                            color: '#203270'
-                        }
-                        }
-                    },
-                    plugins: { legend: { display: false } },
-                    elements: { line: { tension: 0.3 } },
-                    responsive: true,
-                    maintainAspectRatio: false
-                    }
-                });
-            }
-
-            function drawMBTIVisualization(mbtiCounts) {
-                const vizContainer = document.getElementById('mbtiVisualization');
-                vizContainer.innerHTML = '';
-
-                function getDimensionDiff(base, other) {
-                    let diff = 0;
-                    let diffPositions = [];
-                    for (let i = 0; i < 4; i++) {
-                        if (base[i] !== other[i]) {
-                            diff++;
-                            diffPositions.push(i);
-                        }
-                    }
-                    return { count: diff, positions: diffPositions };
-                }
-
-                function getColoredMBTI(base, target) {
-                    let result = '';
-                    for (let i = 0; i < 4; i++) {
-                        if (base[i] === target[i]) {
-                            result += `<span>${target[i]}</span>`;
-                        } else {
-                            result += `<span style="color:#E9634A;font-weight:700;">${target[i]}</span>`;
-                        }
-                    }
-                    return result;
-                }
-
-                // Sort types by difference count (0 to 4)
-                const typesWithDiff = Object.keys(mbtiCounts).map(type => {
-                    const diff = getDimensionDiff(MyMBTI, type);
-                    return { 
-                        type, 
-                        count: mbtiCounts[type], 
-                        diffCount: diff.count,
-                        diffPositions: diff.positions 
-                    };
-                });
-
-                // Group by diffCount
-                const groupedTypes = [[], [], [], [], []]; // 0, 1, 2, 3, 4 differences
-                typesWithDiff.forEach(item => {
-                    groupedTypes[item.diffCount].push(item);
-                });
-
-                // Sort within each group by count (highest first)
-                groupedTypes.forEach(group => {
-                    group.sort((a, b) => b.count - a.count);
-                });
-                
-                // Flatten the array to maintain the organization
-                const sortedTypes = [].concat(...groupedTypes);
-                
-                // Create elements for each type
-                sortedTypes.forEach(item => {
-                    const typeElem = document.createElement('div');
-                    typeElem.className = 'mbti-type';
-                    
-                    if (item.diffCount > 0) {
-                        typeElem.classList.add(`diff-count-${item.diffCount}`);
-                    }
-                    
-                    if (item.type === MyMBTI) {
-                        typeElem.classList.add('your-type');
-                    }
-
-                    // Add colored MBTI code
-                    typeElem.innerHTML = getColoredMBTI(MyMBTI, item.type);
-
-                    // Add count badge
-                    const count = document.createElement('span');
-                    count.className = 'count-badge';
-                    count.innerText = item.count;
-                    typeElem.appendChild(count);
-                    
-                    // Add difference indicator if not your type
-                    if (item.diffCount > 0) {
-                        const diffIndicator = document.createElement('span');
-                        diffIndicator.className = 'diff-indicator';
-                        diffIndicator.innerText = `${item.diffCount} diff`;
-                        diffIndicator.style.backgroundColor = ['', '#a8d08d', '#ffe699', '#f4b183', '#e9634a'][item.diffCount];
-                        typeElem.appendChild(diffIndicator);
-                    }
-
-                    vizContainer.appendChild(typeElem);
-                });
-            }
-
-            function drawTraitComparisonChart(avgIE, avgNS, avgFT, avgJP) {
-                // Parse MyMBTI to get numerical values for comparison
-                const myTraits = {
-                    IE: MyMBTI.includes('I') ? -2 : 2,  // Simplified scale for visualization
-                    NS: MyMBTI.includes('N') ? -2 : 2,
-                    FT: MyMBTI.includes('F') ? -2 : 2,
-                    JP: MyMBTI.includes('J') ? -2 : 2
-                };
-                
-                // Scale the averages for better visualization
-                const scaledAvgIE = avgIE * 2;  // Scale to similar range as myTraits
-                const scaledAvgNS = avgNS * 2;
-                const scaledAvgFT = avgFT * 2;
-                const scaledAvgJP = avgJP * 2;
-                
             
-            }
+            // Calculate average traits for comparison chart
+            let avgIE = 0, avgNS = 0, avgFT = 0, avgJP = 0;
+            allData.forEach(person => {
+                avgIE += person.ie;
+                avgNS += person.ns;
+                avgFT += person.ft;
+                avgJP += person.jp;
+            });
+            
+            avgIE /= allData.length;
+            avgNS /= allData.length;
+            avgFT /= allData.length;
+            avgJP /= allData.length;
+            
+            // Calculate perception by relationship
+            const relationshipPerception = {};
+            allData.forEach(person => {
+                const rel = person.relationshipType;
+                if (!relationshipPerception[rel]) {
+                    relationshipPerception[rel] = {
+                        types: {},
+                        count: 0
+                    };
+                }
+                relationshipPerception[rel].count++;
+                relationshipPerception[rel].types[person.mbtiType] = 
+                    (relationshipPerception[rel].types[person.mbtiType] || 0) + 1;
+            });
+            
+            // Update UI
+            updateSummary(allData.length, allData.filter(p => p.mbtiType !== MyMBTI).length, 
+                        mostCommonMistype, iPercent, ePercent, nPercent, sPercent, 
+                        fPercent, tPercent, jPercent, pPercent);
+            
+            // drawMBTIVisualization(mbtiCounts);
+            drawMBTIBarChart(mbtiCounts);
+            drawTraitComparisonChart(avgIE, avgNS, avgFT, avgJP);
+            updateFilterSections();
 
-            function updateFilterSections() {
+        }
+
+
+        // let mbtiBarChart = null;
+
+        // function drawMBTIBarChart(mbtiCounts) {
+        //     const ctx = document.getElementById('mbtiBarChart').getContext('2d');
+        //     if (mbtiBarChart) mbtiBarChart.destroy();
+
+        //     // 1. 准备数据：排除你自己，按次数降序
+        //     const mis = Object.entries(mbtiCounts)
+        //         .filter(([t]) => t !== MyMBTI)
+        //         .map(([t,c]) => ({ type: t, count: c }))
+        //         .sort((a,b) => b.count - a.count);
+
+        //     const labels = mis.map(d => d.type);
+        //     const data   = mis.map(d => d.count);
+
+        //     // 2. 配色
+        //     const palette = ['#4a6fa5','#28a745','#8a4fff','#ff8f2e','#e9634a'];
+
+        //     mbtiBarChart = new Chart(ctx, {
+        //         type: 'bar',
+        //         data: {
+        //         labels,
+        //         datasets: [{
+        //             label: 'Misperceptions',
+        //             data,
+        //             backgroundColor: 'white',
+        //             borderColor: labels.map((_,i) => palette[i % palette.length]),
+        //             borderWidth: 2,
+        //             hoverBorderWidth: 4
+        //         }]
+        //         },
+        //         options: {
+        //         responsive: true,
+        //         maintainAspectRatio: false,
+        //         scales: {
+        //             x: {
+        //             title: { display: true, text: 'MBTI Type' },
+        //             ticks: { font: { size: 14, weight: '500' } }
+        //             },
+        //             y: {
+        //             beginAtZero: true,
+        //             title: { display: true, text: 'Number of People' },
+        //             ticks: { stepSize: 1 }
+        //             }
+        //         },
+        //         plugins: {
+        //             legend: { display: false },
+        //             tooltip: {
+        //             callbacks: {
+        //                 label: ctx => `${ctx.parsed.y} people`
+        //             }
+        //             },
+        //             datalabels: {
+        //             // 只在“Your Type”这一根上显示
+        //             display: ctx => labels[ctx.dataIndex] === MyMBTI,
+        //             align: 'end',
+        //             anchor: 'end',
+        //             formatter: () => 'Your Type',
+        //             font: { weight: '600' },
+        //             color: palette[labels.indexOf(MyMBTI) % palette.length]
+        //             }
+        //         }
+        //         },
+        //         plugins: [ ChartDataLabels ]
+        //     });
+        // }
+        // 1. 正确的差异计算函数
+        function getDimensionDiff(base, other) {
+            let diff = 0;
+            for (let i = 0; i < 4; i++) {
+                if (base[i] !== other[i]) diff++;
+            }
+            return diff;
+        }
+
+        // 2. 全局保存 Chart 实例
+        let mbtiBarChart = null;
+
+        function drawMBTIBarChart(mbtiCounts) {
+            const ctx = document.getElementById('mbtiBarChart').getContext('2d');
+            if (mbtiBarChart) mbtiBarChart.destroy();
+
+            // 3. 准备数据：包含 diff 并按误解次数降序
+            const mis = Object.entries(mbtiCounts)
+                .map(([type, count]) => ({
+                type,
+                count,
+                diff: getDimensionDiff(MyMBTI, type)
+                }))
+                .sort((a, b) => b.count - a.count);
+
+            const labels = mis.map(d => d.type);
+            const data   = mis.map(d => d.count);
+            const diffs  = mis.map(d => d.diff);
+
+            // 4. 按 diff 选边框色，0 差（你的类型）用深蓝粗边
+            const diffPalette = {
+                0: '#203270',
+                1: '#4a6fa5',
+                2: '#ffba00',
+                3: '#EE66A6',
+                4: '#FF0B55'
+            };
+
+            mbtiBarChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                labels,
+                datasets: [{
+                    label: 'Misperceptions',
+                    data,
+                    backgroundColor: 'white',
+                    borderColor: diffs.map(d => diffPalette[d]),
+                    borderWidth: diffs.map(d => d === 0 ? 4 : 3),
+                    hoverBorderWidth: 6
+                }]
+                },
+                options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { 
+                    title: { display: true, text: 'MBTI Perceptions' },
+                    ticks: { font: { size: 14, weight: '500' } }
+                    },
+                    y: {
+                    beginAtZero: true,
+                    max: mis[0].count+1,
+                    ticks: { stepSize: 1 },
+                    title: { display: true, text: 'Number of People' }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                    callbacks: {
+                        label(ctx) { return `${ctx.parsed.y} people`; }
+                    }
+                    },
+                    datalabels: {
+                    // 只在你的类型那根上显示 两行：★ 和 Your Type
+                    display(context) {
+                        return context.chart.data.labels[context.dataIndex] === MyMBTI;
+                    },
+                    align: 'end',
+                    anchor: 'end',
+                    formatter() { return ['★Your Type']; },
+                    font: { weight: '600', size: 12 },
+                    color: diffPalette[0]
+                    }
+                }
+                },
+                plugins: [ ChartDataLabels ]
+            });
+        }
+
+        
+        function updateSummary(totalCount, mistypeCount, mostCommonMistype, 
+                            iPercent, ePercent, nPercent, sPercent, 
+                            fPercent, tPercent, jPercent, pPercent) {
+
+            
+            const summaryElem = document.querySelector(".summary-title");
+
+            if (mistypeCount === 0) {
+                summaryElem.innerHTML = `<span class="mbti-highlight">Everyone</span> perceived you as your type.`;
+            } else {
+                summaryElem.innerHTML = 
+                    `<span class="mbti-highlight">${mistypeCount}</span> out of <span class="mbti-highlight">${totalCount}</span> people perceive you 
+                    <span class="mbti-highlight">not your type</span>, 
+                    the most common mistypes are <span class="mbti-highlight">${mostCommonMistype}</span>.`;
+            }
+            // Create the slider-like visualization for each trait pair
+            const summaryList = document.querySelector(".summary-list");
+            summaryList.innerHTML = `<li><canvas id="summaryChart" width="300" height="300"></canvas></li>`;
+            // Determine the four core percentages based on your MBTI
+            const dataPoints = [
+                MyMBTI[0] === 'I' ? iPercent : ePercent,
+                MyMBTI[1] === 'N' ? nPercent : sPercent,
+                MyMBTI[2] === 'F' ? fPercent : tPercent,
+                MyMBTI[3] === 'J' ? jPercent : pPercent
+            ];
+
+            const ctx = document.getElementById('summaryChart').getContext('2d');
+            // Destroy existing chart if present
+            if (window.summaryRadar) window.summaryRadar.destroy();
+
+            // Create the radar chart
+            window.summaryRadar = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                labels: [MyMBTI[0] , MyMBTI[1] , MyMBTI[2] , MyMBTI[3] ],
+                datasets: [{
+                    label: '% of matching perceptions: ',
+                    data: dataPoints,
+                    backgroundColor: 'rgba(32,50,112,0.2)',
+                    borderColor: '#203270',
+                    pointBackgroundColor: '#203270',
+                    pointBorderColor: '#fff',
+                    pointRadius: 3,
+                    borderWidth: 1
+                }]
+                },
+                options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                aspectRatio: 1,
+                scales: {
+                    r: {
+                    beginAtZero: true,
+                    max: 100,
+                    ticks: { stepSize: 20, font: { size: 15 } },
+                    grid: { color: '#e0e0e0' },
+                    angleLines: { color: '#e0e0e0' },
+                    pointLabels: {
+                        font: { family: 'Poppins', size: 15 },
+                        color: '#203270'
+                    }
+                    }
+                },
+                plugins: { legend: { display: false } },
+                elements: { line: { tension: 0.3 } },
+                responsive: true,
+                maintainAspectRatio: false
+                }
+            });
+        }
+ 
+        
+        
+        function drawTraitComparisonChart(avgIE, avgNS, avgFT, avgJP) {
+            // Parse MyMBTI to get numerical values for comparison
+            const myTraits = {
+                IE: MyMBTI.includes('I') ? -2 : 2,  // Simplified scale for visualization
+                NS: MyMBTI.includes('N') ? -2 : 2,
+                FT: MyMBTI.includes('F') ? -2 : 2,
+                JP: MyMBTI.includes('J') ? -2 : 2
+            };
+            
+            // Scale the averages for better visualization
+            const scaledAvgIE = avgIE * 2;  // Scale to similar range as myTraits
+            const scaledAvgNS = avgNS * 2;
+            const scaledAvgFT = avgFT * 2;
+            const scaledAvgJP = avgJP * 2;
+        
+        }
+
+        function updateFilterSections() {
                 console.log('⚙️ updateFilterSections() called');
                 const filters = [
                     { key: 'relationshipType', sectionId: 'relationshipTypeSection' },
-                    { key: 'sinceWhen',        sectionId: 'sinceWhenSection'       },
-                    { key: 'intimacy',    sectionId: 'intimacyGraphSection'   },
-                    { key: 'interactionPlace', sectionId: 'interactionPlaceSection'}
+                    { key: 'sinceWhen',        sectionId: 'sinceWhenSection' },
+                    { key: 'intimacy',         sectionId: 'intimacyGraphSection' },
+                    { key: 'interactionPlace', sectionId: 'interactionPlaceSection' }
                 ];
-
+                
                 filters.forEach(({ key, sectionId }) => {
+                    const displayName = [];
+                    const ieUserPct = [];
+                    const nsUserPct = [];
+                    const ftUserPct = [];
+                    const jpUserPct = [];
                     const ul = document.getElementById(sectionId);
-                    if (!ul) return console.error('UL not found:', sectionId);
-                    ul.innerHTML = ''; // 清空
-
-                    // 分组
+                    // 按 filter 分组
                     const groups = allData.reduce((acc, p) => {
                     const v = p[key] || 'Unknown';
-                    ;(acc[v] = acc[v]||[]).push(p);
+                    (acc[v] = acc[v] || []).push(p);
                     return acc;
                     }, {});
-
-                    // 输出每个分组
                     Object.entries(groups).forEach(([group, list]) => {
+                    if (group === 'Unknown' && list.length < 3) return;
                     const total = list.length;
+                    // 计算每侧人数
+                    const eCnt = list.filter(p => p.ieStr === 'E').length;
+                    const iCnt = total - eCnt;
+                    const nCnt = list.filter(p => p.nsStr === 'N').length;
+                    const sCnt = total - nCnt;
+                    const fCnt = list.filter(p => p.ftStr === 'F').length;
+                    const tCnt = total - fCnt;
+                    const jCnt = list.filter(p => p.jpStr === 'J').length;
+                    const pCnt = total - jCnt;
 
-                    // 四个维度统计
-                    const eCnt = list.filter(p=>p.ieStr==='E').length, iCnt = total - eCnt;
-                    const ieM = eCnt>=iCnt?'E':'I', iePct = Math.round(Math.max(eCnt,iCnt)/total*100);
-                    const nCnt = list.filter(p=>p.nsStr==='N').length, sCnt = total - nCnt;
-                    const nsM = nCnt>=sCnt?'N':'S', nsPct = Math.round(Math.max(nCnt,sCnt)/total*100);
-                    const fCnt = list.filter(p=>p.ftStr==='F').length, tCnt = total - fCnt;
-                    const ftM = fCnt>=tCnt?'F':'T', ftPct = Math.round(Math.max(fCnt,tCnt)/total*100);
-                    const jCnt = list.filter(p=>p.jpStr==='J').length, pCnt = total - jCnt;
-                    const jpM = jCnt>=pCnt?'J':'P', jpPct = Math.round(Math.max(jCnt,pCnt)/total*100);
-
-                    // 构造 card
-                    const li = document.createElement('li');
-                    li.innerHTML = `
-                        <div class="group-name">${group}</div>
-                        <div class="stats">
-                        <span class="stat ie">${iePct}%${ieM}</span>
-                        <span class="stat ns">${nsPct}%${nsM}</span>
-                        <span class="stat ft">${ftPct}%${ftM}</span>
-                        <span class="stat jp">${jpPct}%${jpM}</span>
-                        </div>`;
-                    ul.appendChild(li);
-                    });
+                    // 基于你的 MBTI 侧计算百分比
+                    ieUserPct.push(MyMBTI[0] === 'I' ? Math.round(iCnt/total*100) : Math.round(eCnt/total*100)) ;
+                    nsUserPct.push(MyMBTI[1] === 'N' ? Math.round(nCnt/total*100) : Math.round(sCnt/total*100));
+                    ftUserPct.push(MyMBTI[2] === 'F' ? Math.round(fCnt/total*100) : Math.round(tCnt/total*100));
+                    jpUserPct.push(MyMBTI[3] === 'J' ? Math.round(jCnt/total*100) : Math.round(pCnt/total*100));
+                    
+                    displayName.push(group.replace(/_/g,' ')
+                        .replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()));
                 });
+                console.log(displayName);
+                // 定义一个调色板（可以根据 displayName 增加颜色）
+                const radarColors  = ['#4a6fa5','#28a745','#8a4fff','#ff8f2e','#e9634a'];
+        
+
+                // 找到对应 section 下的 canvas，假设你在 HTML 里给每个 section 加了
+                // <canvas id="${sectionId}Radar"></canvas>
+                const canvas = document.getElementById(sectionId + 'Radar');
+                const ctx    = canvas.getContext('2d');
+
+                // 构建 datasets
+                const datasets = displayName.map((name,i) => ({
+                label: name,
+                data: [
+                    ieUserPct[i],
+                    nsUserPct[i],
+                    ftUserPct[i],
+                    jpUserPct[i]
+                ],
+                borderColor:   radarColors[i],
+                
+                borderWidth: 2,
+                fill: true
+                }));
+
+                // 如果已经有旧图表，把它摧毁
+                if (window[sectionId + 'Chart']) {
+                window[sectionId + 'Chart'].destroy();
                 }
 
-            // 为每个 filter 生成分组统计并填充到对应的 <ul>
-            // function updateFilterSections() {
-            //     console.log('⚙️ updateFilterSections() called');
-            //     // 要处理的四个字段，以及它们对应的 <ul id>
-            //     const filters = [
-            //         { key: 'relationshipType', sectionId: 'relationshipTypeSection' },
-            //         { key: 'sinceWhen',       sectionId: 'sinceWhenSection'       },
-            //         { key: 'intimacy',   sectionId: 'intimacyGraphSection'   },
-            //         { key: 'interactionPlace',sectionId: 'interactionPlaceSection'}
-            //     ];
+                // 新建一个 Radar
+                window[sectionId + 'Chart'] = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: MyMBTI.split(''),   // ['I','N','F','J']
+                    datasets
+                },
+                options: {
+                    scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { stepSize: 20 }
+                    }
+                    },
+                    plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                    },
+                    elements: {
+                    line: { tension: 0.3 }
+                    }
+                }
+                });
 
-            //     filters.forEach(({ key, sectionId }) => {
-            //         const ul = document.getElementById(sectionId);
-            //         ul.innerHTML = '';  // 清空
-            //         // 按字段值分组
-            //         const groups = allData.reduce((acc, person) => {
-            //             const val = person[key] || 'Unknown';
-            //             if (!acc[val]) acc[val] = [];
-            //             acc[val].push(person);
-            //             return acc;
-            //         }, {});
+            });
+           
+        }
 
-            //         // 遍历每个组，计算 IE 维度中 E 的百分比，并输出 LI
-            //         Object.entries(groups).forEach(([groupValue, list]) => {
-            //             const total = list.length;
+        // Animation for progress bars
+        function animateProgressBars() {
+            const progressBars = document.querySelectorAll('.trait-fill');
+            progressBars.forEach(bar => {
+                const finalWidth = bar.style.width;
+                bar.style.width = '0%';
+                
+                setTimeout(() => {
+                    bar.style.transition = 'width 0.8s ease-out';
+                    bar.style.width = finalWidth;
+                }, 100);
+            });
+        }
 
-            //             // IE 维度
-            //             const eCount = list.filter(p => p.ieStr === 'E').length;
-            //             const iCount = total - eCount;
-            //             const ieMajor = eCount >= iCount ? 'E' : 'I';
-            //             const iePercent = Math.round((Math.max(eCount, iCount) / total) * 100);
+        // Call this function after the DOM has loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            // This will be called when fetchData() completes in your original code
+            // animateProgressBars() should be called after updateFilterSections()
+            
+            // If you don't have any special initialization beyond what's
+            // already in processData() and fetchData(), you might not need
+            // anything else here
+        });
 
-            //             // NS 维度
-            //             const nCount = list.filter(p => p.nsStr === 'N').length;
-            //             const sCount = total - nCount;
-            //             const nsMajor = nCount >= sCount ? 'N' : 'S';
-            //             const nsPercent = Math.round((Math.max(nCount, sCount) / total) * 100);
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
 
-            //             // FT 维度
-            //             const fCount = list.filter(p => p.ftStr === 'F').length;
-            //             const tCount = total - fCount;
-            //             const ftMajor = fCount >= tCount ? 'F' : 'T';
-            //             const ftPercent = Math.round((Math.max(fCount, tCount) / total) * 100);
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f5f8fb;
+            color: #333;
+            margin: 0;
+            padding: 30px;
+        }
 
-            //             // JP 维度
-            //             const jCount = list.filter(p => p.jpStr === 'J').length;
-            //             const pCount = total - jCount;
-            //             const jpMajor = jCount >= pCount ? 'J' : 'P';
-            //             const jpPercent = Math.round((Math.max(jCount, pCount) / total) * 100);
+        .main-container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
 
-            //             // 构造一行文字：只放每个维度的“多数侧+百分比”
-            //             const li = document.createElement('li');
-            //             li.textContent = `${groupValue}：${iePercent}%${ieMajor}, ${nsPercent}%${nsMajor}, ${ftPercent}%${ftMajor}, ${jpPercent}%${jpMajor}`;
-            //             ul.appendChild(li);
-            //         });
-            //     });
-            // }
+        .header-section {
+            text-align: center;
+            padding: 15px;
+            border-bottom: 1px solid #eaeaea;
+        }
 
-        </script>
-        <style>
-            @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+        .header-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
 
-            body {
-                font-family: 'Poppins', sans-serif;
-                background-color: #f5f8fb;
-                color: #333;
-                margin: 0;
-                padding: 30px;
-            }
+        #mbti-title {
+            font-size: 18px;
+            color: #203270;
+        }
 
-            .main-container {
-                max-width: 900px;
-                margin: 0 auto;
-                background-color: white;
-                border-radius: 15px;
-                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-                padding: 20px;
-            }
+        .summary-section {
+            text-align: left;
+            padding: 20px;
+            border-bottom: 1px solid #eaeaea;
+        }
 
-            .header-section {
-                text-align: center;
-                padding: 15px;
-                border-bottom: 1px solid #eaeaea;
-            }
+        .summary-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
 
-            .header-title {
-                font-size: 24px;
-                font-weight: 600;
-                margin-bottom: 5px;
-            }
+        .summary-list {
+            list-style-type: none;
+            padding-left: 0;
+        }
 
-            #mbti-title {
-                font-size: 18px;
-                color: #203270;
-            }
+        /* Slider styles for trait visualization */
+        .trait-slider {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            gap: 10px;
+        }
 
-            .summary-section {
-                text-align: left;
-                padding: 20px;
-                border-bottom: 1px solid #eaeaea;
-            }
+        .trait-label {
+            font-weight: bold;
+            width: 20px;
+            text-align: center;
+            color: #203270;
+        }
 
-            .summary-title {
-                font-size: 18px;
-                font-weight: 600;
-                margin-bottom: 15px;
-            }
+        .slider-container {
+            flex-grow: 1;
+        }
 
-            .summary-list {
-                list-style-type: none;
-                padding-left: 0;
-            }
+        .slider-bar {
+            height: 12px;
+            background-color: #e0e0e0;
+            border-radius: 6px;
+            position: relative;
+            overflow: hidden;
+        }
 
-            /* Slider styles for trait visualization */
-            .trait-slider {
-                display: flex;
-                align-items: center;
-                margin-bottom: 15px;
-                gap: 10px;
-            }
+        .slider-fill {
+            height: 100%;
+            background-color: #203270;
+            border-radius: 6px 0 0 6px;
+        }
 
-            .trait-label {
-                font-weight: bold;
-                width: 20px;
-                text-align: center;
-                color: #203270;
-            }
+        .slider-percentages {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            margin-top: 2px;
+            color: #666;
+        }
 
-            .slider-container {
-                flex-grow: 1;
-            }
 
-            .slider-bar {
-                height: 12px;
-                background-color: #e0e0e0;
-                border-radius: 6px;
-                position: relative;
-                overflow: hidden;
-            }
+        .visualization-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;   /* 父容器顶部对齐 */
+            gap: 20px;
+        }
 
-            .slider-fill {
-                height: 100%;
-                background-color: #203270;
-                border-radius: 6px 0 0 6px;
-            }
+        .chart-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;   /* 子元素左对齐，标题和文字靠左 */
+            justify-content: flex-start; /* 子元素从顶部开始排列 */
+            width: 48%;
+            /* 如果不需要固定高度，最好删掉下面这一行，让内容决定高度 */
+            height: 450px; 
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        .chart-container .mbti-visualization {
+            margin-top: 20%;
+        }
+    
+        .relationship-section {
+            text-align: left;
+            padding: 30px 20px;
+            border-top: 1px solid #eaeaea;
+            background-color: #fafafa;
+            margin-bottom: 20px;
+        }
 
-            .slider-percentages {
-                display: flex;
-                justify-content: space-between;
-                font-size: 12px;
-                margin-top: 2px;
-                color: #666;
-            }
+        .relationship-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #333;
+            border-left: 4px solid #4a6fa5;
+            padding-left: 12px;
+        }
 
-            .visualization-section {
-                display: flex;
-                justify-content: space-between;
-                align-items: flex-start;   /* 父容器顶部对齐 */
-                gap: 20px;
-            }
+        .section-description {
+            margin-bottom: 20px;
+            color: #555;
+            font-size: 14px;
+            line-height: 1.5;
+        }
 
-            .chart-container {
-                display: flex;
-                flex-direction: column;
-                align-items: center;   /* 子元素左对齐，标题和文字靠左 */
-                justify-content: flex-start; /* 子元素从顶部开始排列 */
-                width: 48%;
-                /* 如果不需要固定高度，最好删掉下面这一行，让内容决定高度 */
-                height: 450px; 
-                padding: 10px;
-                box-sizing: border-box;
-            }
-            .chart-container .mbti-visualization {
-                margin-top: 20%;
-            }
-        
-        
+        .section-description ul {
+            padding-left: 20px;
+        }
 
-            .relationship-section {
-                text-align: left;
-                padding: 20px;
-                border-top: 1px solid #eaeaea;
-            }
-
-            .relationship-title {
-                font-size: 18px;
-                font-weight: 600;
-                margin-bottom: 15px;
-            }
-
-            /* —— 卡片网格 —— */
-            .relationship-list {
+        /* Card grid layout */
+        .relationship-list {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 24px;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
             padding: 0;
             margin: 0;
             list-style: none;
-            }
+        }
 
-            /* —— 卡片样式 & 悬浮效果 —— */
-            .relationship-list li {
+        /* Card styling */
+        .relationship-list li {
             background: #fff;
             border-radius: 12px;
-            padding: 16px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            transition: transform .2s, box-shadow .2s;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            transition: transform .2s, box-shadow .2s;
-            }
-            .relationship-list li:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 6px 16px rgba(0,0,0,0.12);
-            }
+        }
 
-            /* —— 分组名 —— */
-            .relationship-list li .group-name {
-            font-size: 16px;
+        .relationship-list li:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.1);
+        }
+
+        /* Group name styling */
+        .group-name {
+            font-size: 18px;
             font-weight: 700;
-            color: #203270;
-            margin-bottom: 12px;
+            color: #2c3e50;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
             text-align: center;
-            }
+        }
 
-            /* —— 徽章容器 —— */
-            .relationship-list li .stats {
+        /* Trait bars container */
+        .trait-bars {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+        }
+
+        /* Individual trait bar */
+        .trait-bar {
+            width: 100%;
+        }
+
+        .trait-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .trait-name {
+            color: #555;
+        }
+
+        .trait-percentage {
+            color: #333;
+            font-weight: 600;
+        }
+
+        /* Progress bar container */
+        .trait-progress {
+            height: 12px;
+            width: 100%;
+            background-color: #f0f0f0;
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Progress bar fill styles for each trait */
+        .trait-fill {
+            height: 100%;
+            position: absolute;
+            left: 0;
+            top: 0;
+            border-radius: 6px;
+            transition: width 0.5s ease;
+        }
+
+        /* Distinct colors for each personality dimension */
+        .ie-fill {
+            background-color: #4a6fa5;
+        }
+
+        .ns-fill {
+            background-color: #28a745;
+        }
+
+        .ft-fill {
+            background-color: #8a4fff;
+        }
+
+        .jp-fill {
+            background-color: #ff8f2e;
+        }
+
+        /* Legend at the top */
+        .personality-legend {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 24px;
+            padding: 16px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .legend-text {
+            font-size: 14px;
+            color: #555;
+        }
+        .radar-chart-wrapper {
+            width: 400px;
+            height: 400px;
+            margin: 0 auto;   /* 左右自动外边距，水平居中 */
+        }
+        .radar-chart-wrapper canvas {
+        width: 100% !important;
+        height: 100% !important;
+        }
+        
+        
+        .chart-description,
+        .section-description {
+        font-size: 13px;
+        color: #555;
+        margin: 8px 0 12px;
+        }
+        .chart-description ul,
+        .section-description ul {
+        padding-left: 18px;
+        margin: 0;
+        }
+        .chart-description li,
+        .section-description li {
+        margin-bottom: 4px;
+        }
+
+       
+        .mbti-highlight {
+            color: #203270;
+            font-weight: bold;
+        }
+
+        .chart-title {
+            text-align: center;
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #555;
+        }
+
+
+        .mbti-visualization {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+        justify-content: center;
+        margin-top: 20px;
+        max-width: 350px;
+        margin-left: auto;
+        margin-right: auto;
+        }
+
+        .mbti-type {
+        width: 70px;
+        height: 70px;
+        border-radius: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: white;
+        border: 2px solid #8FB9D1;
+        font-weight: bold;
+        position: relative;
+        font-size: 14px;
+        transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .mbti-type.your-type {
+        border: 3px solid #203270;
+        background-color: #e8f4ff;
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(32, 50, 112, 0.2);
+        }
+
+
+
+        .count-badge {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background-color: #203270;
+        color: white;
+        border-radius: 50%;
+        width: 22px;
+        height: 22px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 12px;
+        font-weight: 600;
+        }
+        .diff-legend {
             display: flex;
             flex-wrap: wrap;
-            justify-content: center;
-            gap: 8px;
-            }
-
-            /* —— 徽章共用 —— */
-            .relationship-list li .stat {
-            padding: 6px 10px;
-            font-size: 12px;
-            font-weight: 500;
-            border-radius: 16px;
-            }
-
-            /* —— 四维度专属配色 —— */
-            .relationship-list li .stat.ie { background: rgba(32,50,112,0.15); color: #203270; }
-            .relationship-list li .stat.ns { background: rgba(40,167,69,0.15);  color: #28a745; }
-            .relationship-list li .stat.ft { background: rgba(111,66,193,0.15); color: #6f42c1; }
-            .relationship-list li .stat.jp { background: rgba(253,126,20,0.15); color: #fd7e14; }
-
-            .chart-description,
-            .section-description {
-            font-size: 13px;
+            gap: 16px;
+            margin-top: 1px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 10px;
             color: #555;
-            margin: 8px 0 12px;
-            }
-            .chart-description ul,
-            .section-description ul {
-            padding-left: 18px;
-            margin: 0;
-            }
-            .chart-description li,
-            .section-description li {
-            margin-bottom: 4px;
-            }
+        }
+        .legend-color {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            margin-right: 6px;
+            border-radius: 2px;
+            border: 1px solid #ccc;
+        }
 
-           
-            .mbti-highlight {
-                color: #203270;
-                font-weight: bold;
-            }
-
-            .chart-title {
-                text-align: center;
-                font-size: 14px;
-                margin-bottom: 10px;
-                color: #555;
-            }
-
-
-            .mbti-visualization {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-            justify-content: center;
-            margin-top: 20px;
-            max-width: 350px;
-            margin-left: auto;
-            margin-right: auto;
-            }
-
-            .mbti-type {
-            width: 70px;
-            height: 70px;
-            border-radius: 10px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background-color: white;
-            border: 2px solid #8FB9D1;
-            font-weight: bold;
-            position: relative;
-            font-size: 14px;
-            transition: transform 0.2s, box-shadow 0.2s;
-            }
-
-            .mbti-type.your-type {
-            border: 3px solid #203270;
-            background-color: #e8f4ff;
-            transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(32, 50, 112, 0.2);
-            }
-
-            /* Different border colors based on difference count */
-            .diff-count-1 {
-            border-color: #a8d08d; /* Light green */
-            }
-
-            .diff-count-2 {
-            border-color: #ffe699; /* Light yellow */
-            }
-
-            .diff-count-3 {
-            border-color: #f4b183; /* Light orange */
-            }
-
-            .diff-count-4 {
-            border-color: #e9634a; /* Light red */
-            }
-
-            .count-badge {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            background-color: #203270;
-            color: white;
-            border-radius: 50%;
-            width: 22px;
-            height: 22px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 12px;
-            font-weight: 600;
-            }
-
-            .diff-indicator {
+        .diff-indicator {
             position: absolute;
             bottom: -8px;
             left: 50%;
@@ -776,125 +988,163 @@
             padding: 2px 6px;
             font-size: 10px;
             line-height: 1;
-            }
+        }
 
-            .mbti-type:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 6px 16px rgba(0,0,0,0.15);
-            z-index: 10;
-            }
+        .mbti-type:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.15);
+        z-index: 10;
+        }
 
-            .mbti-type.your-type:hover {
-            transform: scale(1.1);
-            }
+        .mbti-type.your-type:hover {
+        transform: scale(1.1);
+        }
 
-            .tab-container {
-                display: flex;
-                justify-content: center;
-                gap: 10px;
-                margin: 15px 0;
-            }
+        .tab-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
 
-            .tab {
-                padding: 5px 15px;
-                border: 1px solid #ddd;
-                border-radius: 15px;
-                cursor: pointer;
-                transition: all 0.3s;
-            }
+        .tab {
+            padding: 5px 15px;
+            border: 1px solid #ddd;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
 
-            .tab.active {
-                background-color: #203270;
-                color: white;
-                border-color: #203270;
-            }
+        .tab.active {
+            background-color: #203270;
+            color: white;
+            border-color: #203270;
+        }
 
-            /* Add space between different sections */
-            section {
-                margin-bottom: 30px;
-            }
-        </style>
-    </head>
+        /* Add space between different sections */
+        section {
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
 
-    <body>
-        <div class="main-container">
-            <!-- Header Section -->
-            <section class="header-section">
-                <div class="header-title">MBTI Perception Analysis</div>
-                <div id="mbti-title">Your MBTI Type: Loading...</div>
-            </section>
+<body>
+    <div class="main-container">
+        <!-- Header Section -->
+        <section class="header-section">
+            <div class="header-title">MBTI Perception Analysis</div>
+            <div id="mbti-title">Your MBTI Type: Loading...</div>
+        </section>
 
-            <!-- Summary Section -->
-            <section class="summary-section">
-                <div class="summary-title">Loading data...</div>
-                <!-- <ul class="summary-list">
-                    <li>Loading...</li>
-                </ul> -->
-            </section>
+        <!-- Summary Section -->
+        <section class="summary-section">
+            <div class="summary-title">Loading data...</div>
+            <!-- <ul class="summary-list">
+                <li>Loading...</li>
+            </ul> -->
+        </section>
 
-            <!-- Visualization Section -->
-            <section class="visualization-section">
-                <div class="chart-container">
-                    <div class="chart-title">MBTI Type Distribution</div>
-                    <div class="chart-description">
-                        <ul>
-                            <li>Types are grouped by how many letters differ from yours.</li>
-                            <li>Red letters show which traits people perceive differently.</li>
-                            <li>Border colors indicate difference level (green=1, yellow=2, orange=3, red=4).</li>
-                            <li>Numbers show how many people saw you as each type.</li>
-                        </ul>
-                    </div>
-                    <div class="mbti-visualization" id="mbtiVisualization">
-                        <div class="loading">Loading...</div>
-                    </div>
-                </div>
-                <div class="chart-container">
-                    <div class="chart-title">Overall Trait Perception</div>
-                    <div class="chart-description">
-                        <ul>
-                            <li>Each axis is one MBTI dimension.</li>
-                            <li>Blue area = % of matching perceptions.</li>
-                            <li>Grid (0–100%) shows consensus level.</li>
-                            <li>Larger shape = stronger alignment.</li>
-                        </ul>
-                    </div>                  
-                    <ul class="summary-list">
-                        <li>Loading...</li>
+        <!-- Visualization Section -->
+        <section class="visualization-section">
+            <div class="chart-container">
+                <div class="chart-title">MBTI Type Distribution</div>
+                <div class="chart-description">
+                    <ul>
+                        <li>Bars are sorted by how many people perceived you.</li>
+                        <li>Colors show how many traits differ (0–4).</li>
+                        <li>Numbers on the y-axis = number of people.</li>
                     </ul>
                 </div>
-            </section>
-            <!-- relationshipType">Relationship</button>
-            <button class="filter-button" data-filter="sinceWhen">Know time</button>
-            <button class="filter-button" data-filter="intimacyGraph">Familiarity</button>
-            <button class="filter-button" data-filter="interactionPlace -->
-            <!-- Relationship Section -->
-            
+                <div id="diffLegend" class="diff-legend">
+                    <div class="legend-item">
+                      <span class="legend-color" style="background:#203270;"></span> 0 diff (Your Type)
+                    </div>
+                    <div class="legend-item">
+                      <span class="legend-color" style="background:#4a6fa5;"></span> 1 diff
+                    </div>
+                    <div class="legend-item">
+                      <span class="legend-color" style="background:#ffba00;"></span> 2 diff
+                    </div>
+                    <div class="legend-item">
+                      <span class="legend-color" style="background:#EE66A6;"></span> 3 diff
+                    </div>
+                    <div class="legend-item">
+                      <span class="legend-color" style="background:#FF0B55;"></span> 4 diff
+                    </div>
+                  </div>
+                <!-- <div class="mbti-visualization" id="mbtiVisualization">
+                    <div class="loading">Loading...</div>
+                </div> -->
+                <div class="radar-chart-wrapper">
+              <canvas id="mbtiBarChart" style="max-width:600px;height:400px;"></canvas>
+            </div>
+            </div>
+            <div class="chart-container">
+                <div class="chart-title">Overall Trait Perception</div>
+                <div class="chart-description">
+                    <ul>
+                        <li>Each axis is one MBTI dimension.</li>
+                        <li>Blue area = % of matching perceptions.</li>
+                        <li>Grid (0–100%) shows consensus level.</li>
+                        <li>Larger shape = stronger alignment.</li>
+                    </ul>
+                </div>                  
+                <ul class="summary-list">
+                    <li>Loading...</li>
+                </ul>
+            </div>
+        </section>
+  
+        
+        <!-- Main container for all relationship sections -->
+        <div class="personality-container">
+            <!-- Relationship Type Section -->
             <section class="relationship-section">
                 <div class="relationship-title">Perception by Relationship Type</div>
                 <div class="section-description">
-                    <ul>
-                    <li>Each card is one relationship group (e.g., Friend, Family).</li>
-                    <li>Badges show the main letter and percentage for each trait.</li>
-                    <li>Badge colors: blue = I/E, green = N/S, purple = F/T, orange = J/P.</li>
-                    </ul>
+                  <p>How different relationship types perceive your personality traits. </p>
+                    <p>Click on the legend to toggle groups and view their specific distributions.</p>
                 </div>
-                <ul class="relationship-list" id="relationshipTypeSection"></ul>
-            </section>
-            <section class="relationship-section">
+                <!-- 用 canvas 取代 ul -->
+                <div class="radar-chart-wrapper">
+                    <canvas id="relationshipTypeSectionRadar" style="width:300px; height:300px;"></canvas>
+                </div>
+              </section>
+              
+              <!-- Know Time Section -->
+              <section class="relationship-section">
                 <div class="relationship-title">Perception by Know Time</div>
-                <ul class="relationship-list" id="sinceWhenSection"></ul>
-            </section>
-            <section class="relationship-section">
+                <div class="section-description">
+                  <p>How people who've known you for different lengths of time perceive your personality.</p>
+                </div>
+                <div class="radar-chart-wrapper">
+                <canvas id="sinceWhenSectionRadar" style="width:300px; height:300px;"></canvas>
+            </div>
+              </section>
+              
+              <!-- Familiarity Section -->
+              <section class="relationship-section">
                 <div class="relationship-title">Perception by Familiarity</div>
-                <ul class="relationship-list" id="intimacyGraphSection"></ul>
-            </section>
-            <section class="relationship-section">
+                <div class="section-description">
+                  <p>How different levels of familiarity affect perception of your personality traits.</p>
+                </div>
+                <div class="radar-chart-wrapper">
+                <canvas id="intimacyGraphSectionRadar" style="width:300px; height:300px;"></canvas></div>
+              </section>
+              
+              <!-- Interaction Place Section -->
+              <section class="relationship-section">
                 <div class="relationship-title">Perception by Interaction Place</div>
-                <ul class="relationship-list" id="interactionPlaceSection"></ul>
-            </section>
-            
+                <div class="section-description">
+                  <p>How settings and environments influence perception of your personality.</p>
+                </div>
+                <div class="radar-chart-wrapper">
+                <canvas id="interactionPlaceSectionRadar" style="width:300px; height:300px;"></canvas></div>
+              </section>
+              
         </div>
-    </body>
-    </html>
+    </div>
+</body>
+</html>
 
-    
+

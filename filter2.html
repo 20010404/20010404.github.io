@@ -6,10 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MBTI Filter View</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- 先引入 Chart.js UMD 全局版 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- 再引入 DataLabels 插件的 UMD 版 -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
         import { getDatabase, ref, query, orderByChild, equalTo, get } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
-
+        Chart.register(ChartDataLabels);
         const firebaseConfig = {
             apiKey: "AIzaSyCvc9C5PuDqrI26jrmsg5b1PVOW6_k43W4",
             authDomain: "mbti-kale.firebaseapp.com",
@@ -35,21 +39,7 @@
         { code: 'J/P', keys: ['J','P'], labels: ['Judging','Perceiving'], css: 'jp-color' }
         ];
 
-        const legendContainer = document.getElementById('personalityLegend');
-        legendContainer.innerHTML = '';  // 清空
-
-        legendConfig.forEach((dim, idx) => {
-        const userLetter = MyMBTI[idx];                    // e.g. 'I'
-        const labelText  = dim.labels[ dim.keys.indexOf(userLetter) ];  // e.g. 'Introverted'
-
-        legendContainer.insertAdjacentHTML('beforeend', `
-            <div class="legend-item">
-            <div class="legend-color ${dim.css}"></div>
-            <div class="legend-text">${labelText} </div>
-            </div>
-        `);
-        });
-
+      
         let allData = [];
 
         document.addEventListener('DOMContentLoaded', async function() {
@@ -211,12 +201,171 @@
                         mostCommonMistype, iPercent, ePercent, nPercent, sPercent, 
                         fPercent, tPercent, jPercent, pPercent);
             
-            drawMBTIVisualization(mbtiCounts);
+            // drawMBTIVisualization(mbtiCounts);
+            drawMBTIBarChart(mbtiCounts);
             drawTraitComparisonChart(avgIE, avgNS, avgFT, avgJP);
             updateFilterSections();
 
         }
 
+
+        // let mbtiBarChart = null;
+
+        // function drawMBTIBarChart(mbtiCounts) {
+        //     const ctx = document.getElementById('mbtiBarChart').getContext('2d');
+        //     if (mbtiBarChart) mbtiBarChart.destroy();
+
+        //     // 1. 准备数据：排除你自己，按次数降序
+        //     const mis = Object.entries(mbtiCounts)
+        //         .filter(([t]) => t !== MyMBTI)
+        //         .map(([t,c]) => ({ type: t, count: c }))
+        //         .sort((a,b) => b.count - a.count);
+
+        //     const labels = mis.map(d => d.type);
+        //     const data   = mis.map(d => d.count);
+
+        //     // 2. 配色
+        //     const palette = ['#4a6fa5','#28a745','#8a4fff','#ff8f2e','#e9634a'];
+
+        //     mbtiBarChart = new Chart(ctx, {
+        //         type: 'bar',
+        //         data: {
+        //         labels,
+        //         datasets: [{
+        //             label: 'Misperceptions',
+        //             data,
+        //             backgroundColor: 'white',
+        //             borderColor: labels.map((_,i) => palette[i % palette.length]),
+        //             borderWidth: 2,
+        //             hoverBorderWidth: 4
+        //         }]
+        //         },
+        //         options: {
+        //         responsive: true,
+        //         maintainAspectRatio: false,
+        //         scales: {
+        //             x: {
+        //             title: { display: true, text: 'MBTI Type' },
+        //             ticks: { font: { size: 14, weight: '500' } }
+        //             },
+        //             y: {
+        //             beginAtZero: true,
+        //             title: { display: true, text: 'Number of People' },
+        //             ticks: { stepSize: 1 }
+        //             }
+        //         },
+        //         plugins: {
+        //             legend: { display: false },
+        //             tooltip: {
+        //             callbacks: {
+        //                 label: ctx => `${ctx.parsed.y} people`
+        //             }
+        //             },
+        //             datalabels: {
+        //             // 只在“Your Type”这一根上显示
+        //             display: ctx => labels[ctx.dataIndex] === MyMBTI,
+        //             align: 'end',
+        //             anchor: 'end',
+        //             formatter: () => 'Your Type',
+        //             font: { weight: '600' },
+        //             color: palette[labels.indexOf(MyMBTI) % palette.length]
+        //             }
+        //         }
+        //         },
+        //         plugins: [ ChartDataLabels ]
+        //     });
+        // }
+        // 1. 正确的差异计算函数
+        function getDimensionDiff(base, other) {
+            let diff = 0;
+            for (let i = 0; i < 4; i++) {
+                if (base[i] !== other[i]) diff++;
+            }
+            return diff;
+        }
+
+        // 2. 全局保存 Chart 实例
+        let mbtiBarChart = null;
+
+        function drawMBTIBarChart(mbtiCounts) {
+            const ctx = document.getElementById('mbtiBarChart').getContext('2d');
+            if (mbtiBarChart) mbtiBarChart.destroy();
+
+            // 3. 准备数据：包含 diff 并按误解次数降序
+            const mis = Object.entries(mbtiCounts)
+                .map(([type, count]) => ({
+                type,
+                count,
+                diff: getDimensionDiff(MyMBTI, type)
+                }))
+                .sort((a, b) => b.count - a.count);
+
+            const labels = mis.map(d => d.type);
+            const data   = mis.map(d => d.count);
+            const diffs  = mis.map(d => d.diff);
+
+            // 4. 按 diff 选边框色，0 差（你的类型）用深蓝粗边
+            const diffPalette = {
+                0: '#203270',
+                1: '#4a6fa5',
+                2: '#ffba00',
+                3: '#e9634a',
+                4: '#d32f2f'
+            };
+
+            mbtiBarChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                labels,
+                datasets: [{
+                    label: 'Misperceptions',
+                    data,
+                    backgroundColor: 'white',
+                    borderColor: diffs.map(d => diffPalette[d]),
+                    borderWidth: diffs.map(d => d === 0 ? 4 : 2),
+                    hoverBorderWidth: 4
+                }]
+                },
+                options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { 
+                    title: { display: true, text: 'MBTI Perceptions' },
+                    ticks: { font: { size: 14, weight: '500' } }
+                    },
+                    y: {
+                    beginAtZero: true,
+                    max: mis[0].count+1,
+                    ticks: { stepSize: 1 },
+                    title: { display: true, text: 'Number of People' }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                    callbacks: {
+                        label(ctx) { return `${ctx.parsed.y} people`; }
+                    }
+                    },
+                    datalabels: {
+                    // 只在你的类型那根上显示 两行：★ 和 Your Type
+                    display(context) {
+                        return context.chart.data.labels[context.dataIndex] === MyMBTI;
+                    },
+                    align: 'end',
+                    anchor: 'end',
+                    formatter() { return ['★Your Type']; },
+                    font: { weight: '600', size: 12 },
+                    color: diffPalette[0]
+                    }
+                }
+                },
+                plugins: [ ChartDataLabels ]
+            });
+        }
+
+        
         function updateSummary(totalCount, mistypeCount, mostCommonMistype, 
                             iPercent, ePercent, nPercent, sPercent, 
                             fPercent, tPercent, jPercent, pPercent) {
@@ -259,8 +408,8 @@
                     borderColor: '#203270',
                     pointBackgroundColor: '#203270',
                     pointBorderColor: '#fff',
-                    pointRadius: 5,
-                    borderWidth: 2
+                    pointRadius: 3,
+                    borderWidth: 1
                 }]
                 },
                 options: {
@@ -287,95 +436,9 @@
                 }
             });
         }
-
-        function drawMBTIVisualization(mbtiCounts) {
-            const vizContainer = document.getElementById('mbtiVisualization');
-            vizContainer.innerHTML = '';
-
-            function getDimensionDiff(base, other) {
-                let diff = 0;
-                let diffPositions = [];
-                for (let i = 0; i < 4; i++) {
-                    if (base[i] !== other[i]) {
-                        diff++;
-                        diffPositions.push(i);
-                    }
-                }
-                return { count: diff, positions: diffPositions };
-            }
-
-            function getColoredMBTI(base, target) {
-                let result = '';
-                for (let i = 0; i < 4; i++) {
-                    if (base[i] === target[i]) {
-                        result += `<span>${target[i]}</span>`;
-                    } else {
-                        result += `<span style="color:#E9634A;font-weight:700;">${target[i]}</span>`;
-                    }
-                }
-                return result;
-            }
-
-            // Sort types by difference count (0 to 4)
-            const typesWithDiff = Object.keys(mbtiCounts).map(type => {
-                const diff = getDimensionDiff(MyMBTI, type);
-                return { 
-                    type, 
-                    count: mbtiCounts[type], 
-                    diffCount: diff.count,
-                    diffPositions: diff.positions 
-                };
-            });
-
-            // Group by diffCount
-            const groupedTypes = [[], [], [], [], []]; // 0, 1, 2, 3, 4 differences
-            typesWithDiff.forEach(item => {
-                groupedTypes[item.diffCount].push(item);
-            });
-
-            // Sort within each group by count (highest first)
-            groupedTypes.forEach(group => {
-                group.sort((a, b) => b.count - a.count);
-            });
-            
-            // Flatten the array to maintain the organization
-            const sortedTypes = [].concat(...groupedTypes);
-            
-            // Create elements for each type
-            sortedTypes.forEach(item => {
-                const typeElem = document.createElement('div');
-                typeElem.className = 'mbti-type';
-                
-                if (item.diffCount > 0) {
-                    typeElem.classList.add(`diff-count-${item.diffCount}`);
-                }
-                
-                if (item.type === MyMBTI) {
-                    typeElem.classList.add('your-type');
-                }
-
-                // Add colored MBTI code
-                typeElem.innerHTML = getColoredMBTI(MyMBTI, item.type);
-
-                // Add count badge
-                const count = document.createElement('span');
-                count.className = 'count-badge';
-                count.innerText = item.count;
-                typeElem.appendChild(count);
-                
-                // Add difference indicator if not your type
-                if (item.diffCount > 0) {
-                    const diffIndicator = document.createElement('span');
-                    diffIndicator.className = 'diff-indicator';
-                    diffIndicator.innerText = `${item.diffCount} diff`;
-                    diffIndicator.style.backgroundColor = ['', '#a8d08d', '#ffe699', '#f4b183', '#e9634a'][item.diffCount];
-                    typeElem.appendChild(diffIndicator);
-                }
-
-                vizContainer.appendChild(typeElem);
-            });
-        }
-
+ 
+        
+        
         function drawTraitComparisonChart(avgIE, avgNS, avgFT, avgJP) {
             // Parse MyMBTI to get numerical values for comparison
             const myTraits = {
@@ -390,195 +453,112 @@
             const scaledAvgNS = avgNS * 2;
             const scaledAvgFT = avgFT * 2;
             const scaledAvgJP = avgJP * 2;
-            
         
         }
 
-       // This function needs to be integrated with your existing code
-        // function updateFilterSections() {
-        //     console.log('⚙️ updateFilterSections() called');
-            
-        //     const filters = [
-        //         { key: 'relationshipType', sectionId: 'relationshipTypeSection' },
-        //         { key: 'sinceWhen', sectionId: 'sinceWhenSection' },
-        //         { key: 'intimacy', sectionId: 'intimacyGraphSection' },
-        //         { key: 'interactionPlace', sectionId: 'interactionPlaceSection' }
-        //     ];
-            
-        //     filters.forEach(({ key, sectionId }) => {
-        //         const ul = document.getElementById(sectionId);
-        //         if (!ul) return console.error('UL not found:', sectionId);
-        //         ul.innerHTML = ''; // Clear existing content
-                
-        //         // Group data by the filter key
-        //         const groups = allData.reduce((acc, p) => {
-        //             const v = p[key] || 'Unknown';
-        //             (acc[v] = acc[v] || []).push(p);
-        //             return acc;
-        //         }, {});
-                
-        //         // Output each group
-        //         Object.entries(groups).forEach(([group, list]) => {
-        //             if (group === 'Unknown' && list.length < 3) return; // Skip small unknown groups
-                    
-        //             const total = list.length;
-                    
-        //             // Calculate percentages for each dimension
-        //             const eCnt = list.filter(p => p.ieStr === 'E').length; 
-        //             const iCnt = total - eCnt;
-        //             const ieM = eCnt >= iCnt ? 'E' : 'I';
-        //             const iePct = Math.round(Math.max(eCnt, iCnt) / total * 100);
-                    
-        //             const nCnt = list.filter(p => p.nsStr === 'N').length;
-        //             const sCnt = total - nCnt;
-        //             const nsM = nCnt >= sCnt ? 'N' : 'S';
-        //             const nsPct = Math.round(Math.max(nCnt, sCnt) / total * 100);
-                    
-        //             const fCnt = list.filter(p => p.ftStr === 'F').length;
-        //             const tCnt = total - fCnt;
-        //             const ftM = fCnt >= tCnt ? 'F' : 'T';
-        //             const ftPct = Math.round(Math.max(fCnt, tCnt) / total * 100);
-                    
-        //             const jCnt = list.filter(p => p.jpStr === 'J').length;
-        //             const pCnt = total - jCnt;
-        //             const jpM = jCnt >= pCnt ? 'J' : 'P';
-        //             const jpPct = Math.round(Math.max(jCnt, pCnt) / total * 100);
-                    
-        //             // Create a card for this group
-        //             const li = document.createElement('li');
-                    
-        //             // Format group name for display - title case and replace underscores
-        //             const displayName = group.replace(/_/g, ' ')
-        //                 .replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
-                        
-        //             li.innerHTML = `
-        //                 <div class="group-name">${displayName}</div>
-        //                 <div class="trait-bars">
-        //                     <div class="trait-bar">
-        //                         <div class="trait-label">
-        //                             <span class="trait-percentage">${iePct}%${ieM}</span>
-        //                         </div>
-        //                         <div class="trait-progress">
-        //                             <div class="trait-fill ie-fill" style="width: ${iePct}%"></div>
-        //                         </div>
-        //                     </div>
-                            
-        //                     <div class="trait-bar">
-        //                         <div class="trait-label">
-        //                             <span class="trait-percentage">${nsPct}%${nsM}</span>
-        //                         </div>
-        //                         <div class="trait-progress">
-        //                             <div class="trait-fill ns-fill" style="width: ${nsPct}%"></div>
-        //                         </div>
-        //                     </div>
-                            
-        //                     <div class="trait-bar">
-        //                         <div class="trait-label">
-        //                             <span class="trait-percentage">${ftPct}%${ftM}</span>
-        //                         </div>
-        //                         <div class="trait-progress">
-        //                             <div class="trait-fill ft-fill" style="width: ${ftPct}%"></div>
-        //                         </div>
-        //                     </div>
-                            
-        //                     <div class="trait-bar">
-        //                         <div class="trait-label">
-        //                             <span class="trait-percentage">${jpPct}%${jpM}</span>
-        //                         </div>
-        //                         <div class="trait-progress">
-        //                             <div class="trait-fill jp-fill" style="width: ${jpPct}%"></div>
-        //                         </div>
-        //                     </div>
-        //                 </div>
-        //             `;
-                    
-        //             ul.appendChild(li);
-        //         });
-                
-        //         // If no cards were created, add a message
-        //         if (ul.childElementCount === 0) {
-        //             const emptyMessage = document.createElement('p');
-        //             emptyMessage.className = 'empty-message';
-        //             emptyMessage.textContent = 'No data available for this category';
-        //             ul.parentNode.appendChild(emptyMessage);
-        //         }
-        //     });
-        // }
         function updateFilterSections() {
-        console.log('⚙️ updateFilterSections() called');
-        const filters = [
-            { key: 'relationshipType', sectionId: 'relationshipTypeSection' },
-            { key: 'sinceWhen',        sectionId: 'sinceWhenSection' },
-            { key: 'intimacy',         sectionId: 'intimacyGraphSection' },
-            { key: 'interactionPlace', sectionId: 'interactionPlaceSection' }
-        ];
+                console.log('⚙️ updateFilterSections() called');
+                const filters = [
+                    { key: 'relationshipType', sectionId: 'relationshipTypeSection' },
+                    { key: 'sinceWhen',        sectionId: 'sinceWhenSection' },
+                    { key: 'intimacy',         sectionId: 'intimacyGraphSection' },
+                    { key: 'interactionPlace', sectionId: 'interactionPlaceSection' }
+                ];
+                
+                filters.forEach(({ key, sectionId }) => {
+                    const displayName = [];
+                    const ieUserPct = [];
+                    const nsUserPct = [];
+                    const ftUserPct = [];
+                    const jpUserPct = [];
+                    const ul = document.getElementById(sectionId);
+                    // 按 filter 分组
+                    const groups = allData.reduce((acc, p) => {
+                    const v = p[key] || 'Unknown';
+                    (acc[v] = acc[v] || []).push(p);
+                    return acc;
+                    }, {});
+                    Object.entries(groups).forEach(([group, list]) => {
+                    if (group === 'Unknown' && list.length < 3) return;
+                    const total = list.length;
+                    // 计算每侧人数
+                    const eCnt = list.filter(p => p.ieStr === 'E').length;
+                    const iCnt = total - eCnt;
+                    const nCnt = list.filter(p => p.nsStr === 'N').length;
+                    const sCnt = total - nCnt;
+                    const fCnt = list.filter(p => p.ftStr === 'F').length;
+                    const tCnt = total - fCnt;
+                    const jCnt = list.filter(p => p.jpStr === 'J').length;
+                    const pCnt = total - jCnt;
 
-        filters.forEach(({ key, sectionId }) => {
-            const ul = document.getElementById(sectionId);
-            if (!ul) return console.error('UL not found:', sectionId);
-            ul.innerHTML = ''; // 清空旧内容
+                    // 基于你的 MBTI 侧计算百分比
+                    ieUserPct.push(MyMBTI[0] === 'I' ? Math.round(iCnt/total*100) : Math.round(eCnt/total*100)) ;
+                    nsUserPct.push(MyMBTI[1] === 'N' ? Math.round(nCnt/total*100) : Math.round(sCnt/total*100));
+                    ftUserPct.push(MyMBTI[2] === 'F' ? Math.round(fCnt/total*100) : Math.round(tCnt/total*100));
+                    jpUserPct.push(MyMBTI[3] === 'J' ? Math.round(jCnt/total*100) : Math.round(pCnt/total*100));
+                    
+                    displayName.push(group.replace(/_/g,' ')
+                        .replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()));
+                });
+                console.log(displayName);
+                // 定义一个调色板（可以根据 displayName 增加颜色）
+                const radarColors  = ['#4a6fa5','#28a745','#8a4fff','#ff8f2e','#e9634a'];
+        
 
-            // 按 filter 分组
-            const groups = allData.reduce((acc, p) => {
-            const v = p[key] || 'Unknown';
-            (acc[v] = acc[v] || []).push(p);
-            return acc;
-            }, {});
+                // 找到对应 section 下的 canvas，假设你在 HTML 里给每个 section 加了
+                // <canvas id="${sectionId}Radar"></canvas>
+                const canvas = document.getElementById(sectionId + 'Radar');
+                const ctx    = canvas.getContext('2d');
 
-            Object.entries(groups).forEach(([group, list]) => {
-            if (group === 'Unknown' && list.length < 3) return;
-            const total = list.length;
+                // 构建 datasets
+                const datasets = displayName.map((name,i) => ({
+                label: name,
+                data: [
+                    ieUserPct[i],
+                    nsUserPct[i],
+                    ftUserPct[i],
+                    jpUserPct[i]
+                ],
+                borderColor:   radarColors[i],
+                
+                borderWidth: 2,
+                fill: true
+                }));
 
-            // 计算每侧人数
-            const eCnt = list.filter(p => p.ieStr === 'E').length;
-            const iCnt = total - eCnt;
-            const nCnt = list.filter(p => p.nsStr === 'N').length;
-            const sCnt = total - nCnt;
-            const fCnt = list.filter(p => p.ftStr === 'F').length;
-            const tCnt = total - fCnt;
-            const jCnt = list.filter(p => p.jpStr === 'J').length;
-            const pCnt = total - jCnt;
+                // 如果已经有旧图表，把它摧毁
+                if (window[sectionId + 'Chart']) {
+                window[sectionId + 'Chart'].destroy();
+                }
 
-            // 基于你的 MBTI 侧计算百分比
-            const ieUserPct = MyMBTI[0] === 'I' ? Math.round(iCnt/total*100) : Math.round(eCnt/total*100);
-            const nsUserPct = MyMBTI[1] === 'N' ? Math.round(nCnt/total*100) : Math.round(sCnt/total*100);
-            const ftUserPct = MyMBTI[2] === 'F' ? Math.round(fCnt/total*100) : Math.round(tCnt/total*100);
-            const jpUserPct = MyMBTI[3] === 'J' ? Math.round(jCnt/total*100) : Math.round(pCnt/total*100);
+                // 新建一个 Radar
+                window[sectionId + 'Chart'] = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: MyMBTI.split(''),   // ['I','N','F','J']
+                    datasets
+                },
+                options: {
+                    scales: {
+                    r: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { stepSize: 20 }
+                    }
+                    },
+                    plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top'
+                    }
+                    },
+                    elements: {
+                    line: { tension: 0.3 }
+                    }
+                }
+                });
 
-            const displayName = group.replace(/_/g,' ')
-                .replace(/\w\S*/g, txt => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
-
-            const li = document.createElement('li');
-            li.innerHTML = `
-                <div class="group-name">${displayName}</div>
-                <div class="trait-bars">
-                <div class="trait-bar">
-                    <div class="trait-label"><span class="trait-percentage">${ieUserPct}%</span></div>
-                    <div class="trait-progress"><div class="trait-fill ie-fill" style="width:${ieUserPct}%"></div></div>
-                </div>
-                <div class="trait-bar">
-                    <div class="trait-label"><span class="trait-percentage">${nsUserPct}%</span></div>
-                    <div class="trait-progress"><div class="trait-fill ns-fill" style="width:${nsUserPct}%"></div></div>
-                </div>
-                <div class="trait-bar">
-                    <div class="trait-label"><span class="trait-percentage">${ftUserPct}%</span></div>
-                    <div class="trait-progress"><div class="trait-fill ft-fill" style="width:${ftUserPct}%"></div></div>
-                </div>
-                <div class="trait-bar">
-                    <div class="trait-label"><span class="trait-percentage">${jpUserPct}%</span></div>
-                    <div class="trait-progress"><div class="trait-fill jp-fill" style="width:${jpUserPct}%"></div></div>
-                </div>
-                </div>`;
-            ul.appendChild(li);
             });
-
-            if (ul.childElementCount === 0) {
-            const empty = document.createElement('p');
-            empty.className = 'empty-message';
-            empty.textContent = 'No data available for this category';
-            ul.parentNode.appendChild(empty);
-            }
-        });
+           
         }
 
         // Animation for progress bars
@@ -701,6 +681,7 @@
             color: #666;
         }
 
+
         .visualization-section {
             display: flex;
             justify-content: space-between;
@@ -723,78 +704,6 @@
             margin-top: 20%;
         }
     
-    
-
-        /* .relationship-section {
-            text-align: left;
-            padding: 20px;
-            border-top: 1px solid #eaeaea;
-        }
-
-        .relationship-title {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 15px;
-        }
-
-        /* —— 卡片网格 —— 
-        .relationship-list {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-        gap: 24px;
-        padding: 0;
-        margin: 0;
-        list-style: none;
-        }
-
-        /* —— 卡片样式 & 悬浮效果 —— 
-        .relationship-list li {
-        background: #fff;
-        border-radius: 12px;
-        padding: 16px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        transition: transform .2s, box-shadow .2s;
-        }
-        .relationship-list li:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 6px 16px rgba(0,0,0,0.12);
-        }
-
-        /* —— 分组名 —— 
-        .relationship-list li .group-name {
-        font-size: 16px;
-        font-weight: 700;
-        color: #203270;
-        margin-bottom: 12px;
-        text-align: center;
-        }
-
-        /* —— 徽章容器 —— 
-        .relationship-list li .stats {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 8px;
-        }
-
-        /* —— 徽章共用 —— 
-        .relationship-list li .stat {
-        padding: 6px 10px;
-        font-size: 12px;
-        font-weight: 500;
-        border-radius: 16px;
-        }
-
-        /* —— 四维度专属配色 —— 
-        .relationship-list li .stat.ie { background: rgba(32,50,112,0.15); color: #203270; }
-        .relationship-list li .stat.ns { background: rgba(40,167,69,0.15);  color: #28a745; }
-        .relationship-list li .stat.ft { background: rgba(111,66,193,0.15); color: #6f42c1; }
-        .relationship-list li .stat.jp { background: rgba(253,126,20,0.15); color: #fd7e14; } */
-
-
         .relationship-section {
             text-align: left;
             padding: 30px 20px;
@@ -956,11 +865,16 @@
             font-size: 14px;
             color: #555;
         }
-
-        .ie-color { background-color: #4a6fa5; }
-        .ns-color { background-color: #28a745; }
-        .ft-color { background-color: #8a4fff; }
-        .jp-color { background-color: #ff8f2e; }
+        .radar-chart-wrapper {
+            width: 400px;
+            height: 400px;
+            margin: 0 auto;   /* 左右自动外边距，水平居中 */
+        }
+        .radar-chart-wrapper canvas {
+        width: 100% !important;
+        height: 100% !important;
+        }
+        
         
         .chart-description,
         .section-description {
@@ -1025,22 +939,7 @@
         box-shadow: 0 4px 12px rgba(32, 50, 112, 0.2);
         }
 
-        /* Different border colors based on difference count */
-        .diff-count-1 {
-        border-color: #a8d08d; /* Light green */
-        }
 
-        .diff-count-2 {
-        border-color: #ffe699; /* Light yellow */
-        }
-
-        .diff-count-3 {
-        border-color: #f4b183; /* Light orange */
-        }
-
-        .diff-count-4 {
-        border-color: #e9634a; /* Light red */
-        }
 
         .count-badge {
         position: absolute;
@@ -1057,18 +956,38 @@
         font-size: 12px;
         font-weight: 600;
         }
+        .diff-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-top: 1px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 10px;
+            color: #555;
+        }
+        .legend-color {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            margin-right: 6px;
+            border-radius: 2px;
+            border: 1px solid #ccc;
+        }
 
         .diff-indicator {
-        position: absolute;
-        bottom: -8px;
-        left: 50%;
-        transform: translateX(-50%);
-        background-color: #555;
-        color: white;
-        border-radius: 10px;
-        padding: 2px 6px;
-        font-size: 10px;
-        line-height: 1;
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #555;
+            color: white;
+            border-radius: 10px;
+            padding: 2px 6px;
+            font-size: 10px;
+            line-height: 1;
         }
 
         .mbti-type:hover {
@@ -1131,15 +1050,34 @@
                 <div class="chart-title">MBTI Type Distribution</div>
                 <div class="chart-description">
                     <ul>
-                        <li>Types are grouped by how many letters differ from yours.</li>
-                        <li>Red letters show which traits people perceive differently.</li>
-                        <li>Border colors indicate difference level (green=1, yellow=2, orange=3, red=4).</li>
-                        <li>Numbers show how many people saw you as each type.</li>
+                        <li>Bars are sorted by how many people perceived you.</li>
+                        <li>Colors show how many traits differ (0–4).</li>
+                        <li>Numbers on the y-axis = number of people.</li>
                     </ul>
                 </div>
-                <div class="mbti-visualization" id="mbtiVisualization">
+                <div id="diffLegend" class="diff-legend">
+                    <div class="legend-item">
+                      <span class="legend-color" style="background:#203270;"></span> 0 diff (Your Type)
+                    </div>
+                    <div class="legend-item">
+                      <span class="legend-color" style="background:#4a6fa5;"></span> 1 diff
+                    </div>
+                    <div class="legend-item">
+                      <span class="legend-color" style="background:#ffba00;"></span> 2 diff
+                    </div>
+                    <div class="legend-item">
+                      <span class="legend-color" style="background:#e9634a;"></span> 3 diff
+                    </div>
+                    <div class="legend-item">
+                      <span class="legend-color" style="background:#d32f2f;"></span> 4 diff
+                    </div>
+                  </div>
+                <!-- <div class="mbti-visualization" id="mbtiVisualization">
                     <div class="loading">Loading...</div>
-                </div>
+                </div> -->
+                <div class="radar-chart-wrapper">
+              <canvas id="mbtiBarChart" style="max-width:600px;height:400px;"></canvas>
+            </div>
             </div>
             <div class="chart-container">
                 <div class="chart-title">Overall Trait Perception</div>
@@ -1156,60 +1094,54 @@
                 </ul>
             </div>
         </section>
-        <!-- relationshipType">Relationship</button>
-        <button class="filter-button" data-filter="sinceWhen">Know time</button>
-        <button class="filter-button" data-filter="intimacyGraph">Familiarity</button>
-        <button class="filter-button" data-filter="interactionPlace -->
-        <!-- Relationship Section -->
+  
         
         <!-- Main container for all relationship sections -->
         <div class="personality-container">
-            <!-- Global Legend -->
-            <div class="personality-legend" id="personalityLegend"></div>
-
             <!-- Relationship Type Section -->
             <section class="relationship-section">
                 <div class="relationship-title">Perception by Relationship Type</div>
                 <div class="section-description">
-                    <p>How different relationship types perceive your personality traits.</p>
+                  <p>How different relationship types perceive your personality traits. </p>
+                    <p>Click on the legend to toggle groups and view their specific distributions.</p>
                 </div>
-                <ul class="relationship-list" id="relationshipTypeSection">
-                    <!-- Will be populated by JavaScript -->
-                </ul>
-            </section>
-
-            <!-- Know Time Section -->
-            <section class="relationship-section">
+                <!-- 用 canvas 取代 ul -->
+                <div class="radar-chart-wrapper">
+                    <canvas id="relationshipTypeSectionRadar" style="width:300px; height:300px;"></canvas>
+                </div>
+              </section>
+              
+              <!-- Know Time Section -->
+              <section class="relationship-section">
                 <div class="relationship-title">Perception by Know Time</div>
                 <div class="section-description">
-                    <p>How people who've known you for different lengths of time perceive your personality.</p>
+                  <p>How people who've known you for different lengths of time perceive your personality.</p>
                 </div>
-                <ul class="relationship-list" id="sinceWhenSection">
-                    <!-- Will be populated by JavaScript -->
-                </ul>
-            </section>
-
-            <!-- Familiarity Section -->
-            <section class="relationship-section">
+                <div class="radar-chart-wrapper">
+                <canvas id="sinceWhenSectionRadar" style="width:300px; height:300px;"></canvas>
+            </div>
+              </section>
+              
+              <!-- Familiarity Section -->
+              <section class="relationship-section">
                 <div class="relationship-title">Perception by Familiarity</div>
                 <div class="section-description">
-                    <p>How different levels of familiarity affect perception of your personality traits.</p>
+                  <p>How different levels of familiarity affect perception of your personality traits.</p>
                 </div>
-                <ul class="relationship-list" id="intimacyGraphSection">
-                    <!-- Will be populated by JavaScript -->
-                </ul>
-            </section>
-
-            <!-- Interaction Place Section -->
-            <section class="relationship-section">
+                <div class="radar-chart-wrapper">
+                <canvas id="intimacyGraphSectionRadar" style="width:300px; height:300px;"></canvas></div>
+              </section>
+              
+              <!-- Interaction Place Section -->
+              <section class="relationship-section">
                 <div class="relationship-title">Perception by Interaction Place</div>
                 <div class="section-description">
-                    <p>How settings and environments influence perception of your personality.</p>
+                  <p>How settings and environments influence perception of your personality.</p>
                 </div>
-                <ul class="relationship-list" id="interactionPlaceSection">
-                    <!-- Will be populated by JavaScript -->
-                </ul>
-            </section>
+                <div class="radar-chart-wrapper">
+                <canvas id="interactionPlaceSectionRadar" style="width:300px; height:300px;"></canvas></div>
+              </section>
+              
         </div>
     </div>
 </body>
