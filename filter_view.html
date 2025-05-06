@@ -208,73 +208,6 @@
 
         }
 
-
-        // let mbtiBarChart = null;
-
-        // function drawMBTIBarChart(mbtiCounts) {
-        //     const ctx = document.getElementById('mbtiBarChart').getContext('2d');
-        //     if (mbtiBarChart) mbtiBarChart.destroy();
-
-        //     // 1. 准备数据：排除你自己，按次数降序
-        //     const mis = Object.entries(mbtiCounts)
-        //         .filter(([t]) => t !== MyMBTI)
-        //         .map(([t,c]) => ({ type: t, count: c }))
-        //         .sort((a,b) => b.count - a.count);
-
-        //     const labels = mis.map(d => d.type);
-        //     const data   = mis.map(d => d.count);
-
-        //     // 2. 配色
-        //     const palette = ['#4a6fa5','#28a745','#8a4fff','#ff8f2e','#e9634a'];
-
-        //     mbtiBarChart = new Chart(ctx, {
-        //         type: 'bar',
-        //         data: {
-        //         labels,
-        //         datasets: [{
-        //             label: 'Misperceptions',
-        //             data,
-        //             backgroundColor: 'white',
-        //             borderColor: labels.map((_,i) => palette[i % palette.length]),
-        //             borderWidth: 2,
-        //             hoverBorderWidth: 4
-        //         }]
-        //         },
-        //         options: {
-        //         responsive: true,
-        //         maintainAspectRatio: false,
-        //         scales: {
-        //             x: {
-        //             title: { display: true, text: 'MBTI Type' },
-        //             ticks: { font: { size: 14, weight: '500' } }
-        //             },
-        //             y: {
-        //             beginAtZero: true,
-        //             title: { display: true, text: 'Number of People' },
-        //             ticks: { stepSize: 1 }
-        //             }
-        //         },
-        //         plugins: {
-        //             legend: { display: false },
-        //             tooltip: {
-        //             callbacks: {
-        //                 label: ctx => `${ctx.parsed.y} people`
-        //             }
-        //             },
-        //             datalabels: {
-        //             // 只在“Your Type”这一根上显示
-        //             display: ctx => labels[ctx.dataIndex] === MyMBTI,
-        //             align: 'end',
-        //             anchor: 'end',
-        //             formatter: () => 'Your Type',
-        //             font: { weight: '600' },
-        //             color: palette[labels.indexOf(MyMBTI) % palette.length]
-        //             }
-        //         }
-        //         },
-        //         plugins: [ ChartDataLabels ]
-        //     });
-        // }
         // 1. 正确的差异计算函数
         function getDimensionDiff(base, other) {
             let diff = 0;
@@ -420,11 +353,11 @@
                     r: {
                     beginAtZero: true,
                     max: 100,
-                    ticks: { stepSize: 20, font: { size: 15 } },
+                    ticks: { stepSize: 20, font: { size: 10 } },
                     grid: { color: '#e0e0e0' },
                     angleLines: { color: '#e0e0e0' },
                     pointLabels: {
-                        font: { family: 'Poppins', size: 15 },
+                        font: { family: 'Poppins', size: 20 },
                         color: '#203270'
                     }
                     }
@@ -696,7 +629,7 @@
             justify-content: flex-start; /* 子元素从顶部开始排列 */
             width: 48%;
             /* 如果不需要固定高度，最好删掉下面这一行，让内容决定高度 */
-            height: 450px; 
+            height: 600px; 
             padding: 10px;
             box-sizing: border-box;
         }
@@ -1039,9 +972,6 @@
         <!-- Summary Section -->
         <section class="summary-section">
             <div class="summary-title">Loading data...</div>
-            <!-- <ul class="summary-list">
-                <li>Loading...</li>
-            </ul> -->
         </section>
 
         <!-- Visualization Section -->
@@ -1072,9 +1002,6 @@
                       <span class="legend-color" style="background:#FF0B55;"></span> 4 diff
                     </div>
                   </div>
-                <!-- <div class="mbti-visualization" id="mbtiVisualization">
-                    <div class="loading">Loading...</div>
-                </div> -->
                 <div class="radar-chart-wrapper">
               <canvas id="mbtiBarChart" style="max-width:600px;height:400px;"></canvas>
             </div>
