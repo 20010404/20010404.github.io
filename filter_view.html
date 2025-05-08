@@ -932,11 +932,9 @@
                     const dimensionColor = group.correctDimensions === 4 ? '#4CAF50' : '#4CAF50';
                     const impressionTypeHtml = formatImpressionType(group.impressionType, MyMBTI);
                     return `<li style="margin-bottom: 8px; line-height: 1.4;">
-                        <span style="color: ${dimensionColor}; font-weight: 600;">${group.displayName}</span> - 
-                        ${group.correctDimensions === 4
-                            ? `<span>Perfectly matched all 4 of your dimensions</span>`
-                            : `<span>Correctly matched ${group.correctDimensions} dimensions</span>`} 
-                        <span style="color: #555; font-size: 0.9em;">(Average impression: ${impressionTypeHtml}, Average accuracy: ${group.avgPerception.toFixed(1)}%)</span>
+                        <span style="color: ${dimensionColor}; font-weight: 600;">${group.displayName}
+                      
+                        <span style="color: #555; "> - Average impression: ${impressionTypeHtml}, Average accuracy: ${group.avgPerception.toFixed(1)}%</span>
                     </li>`;
                 }).join('')}
             </ul>
@@ -948,8 +946,7 @@
                     const impressionTypeHtml = formatImpressionType(group.impressionType, MyMBTI);
                     return `<li style="margin-bottom: 8px; line-height: 1.4;">
                         <span style="color: ${dimensionColor}; font-weight: 600;">${group.displayName}</span> - 
-                        
-                        <span style="color: #555; font-size: 0.9em;">Average impression: ${impressionTypeHtml}, Average accuracy: ${group.avgPerception.toFixed(1)}%</span>
+                        <span style="color: #555; ">Average impression: ${impressionTypeHtml}, Average accuracy: ${group.avgPerception.toFixed(1)}%</span>
                     </li>`;
                 }).join('')}
             </ul>
