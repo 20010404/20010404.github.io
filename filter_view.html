@@ -842,9 +842,6 @@
         let mbtiNetworkChart = null;
 
 
-
-
-
         function updateCombinedRadar() {
             // 计算所有筛选组合的准确度
             const groupPerceptions = [];
@@ -867,12 +864,8 @@
                         // 其他情况直接比较
                         return p[filter.key] === optionValue;
                     });
-                    // console.log(filter.key);
-                    // console.log(allData);
-                    // console.log(filteredData);
                     // 如果该组没有数据，则跳过
                     if (filteredData.length === 0) {
-                        // console.log(filter.key);
                         return;
                     }
 
@@ -899,6 +892,9 @@
                     // 计算感知的平均准确度
                     const avgPerception = (iePct + nsPct + ftPct + jpPct) / 4;
 
+                    // 计算组的平均印象 MBTI 类型
+                    const avgImpressionType = calculateImpressionType(filteredData);
+                    
                     // 添加到组感知数组
                     groupPerceptions.push({
                         filterType: filter.key,
@@ -906,6 +902,7 @@
                         displayName: optionValue.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
                         correctDimensions,
                         avgPerception,
+                        impressionType: avgImpressionType, // 添加平均印象类型
                         dimensions: [iePct, nsPct, ftPct, jpPct]
                     });
                 });
@@ -928,38 +925,43 @@
             const accuracyReportElem = document.getElementById('accuracy-report');
 
             let reportContent = `
-<div style="margin: 0 0 0 30px; padding: 15px 20px; background-color: #f8f9fa; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.0); border-left: 4px solid ; font-family: 'Poppins', Arial, sans-serif;margin-bottom : 10px">
-    <h3 style="margin: 0 0 15px 0; color: #333; font-size: 16px; font-weight: 600;">Groups Most Accurately Identifying Your MBTI Type:</h3>
-    <ul style="margin: 0 0 20px 0; padding-left: 25px; list-style-type: disc;">
-        ${mostAccurate.map(group => {
-                return `<li style="margin-bottom: 8px; line-height: 1.4;">
-                <span style="color: #4CAF50; font-weight: 600;">${group.displayName}</span> - 
-                ${group.correctDimensions === 4
-                        ? `<span>Perfectly matched all 4 of your dimensions</span>`
-                        : `<span>Correctly matched ${group.correctDimensions} dimensions</span>`} 
-                <span style="color: #555; font-size: 0.9em;">(Average accuracy: ${group.avgPerception.toFixed(1)}%)</span>
-            </li>`;
-            }).join('')}
-    </ul>
-    
-    <h3 style="margin: 0 0 15px 0; color: #333; font-size: 16px; font-weight: 600; border-top: 1px solid #e0e0e0; padding-top: 15px;">Groups Least Accurately Identifying Your MBTI Type:</h3>
-    <ul style="margin: 0; padding-left: 25px; list-style-type: disc;">
-        ${leastAccurate.map(group => {
-                return `<li style="margin-bottom: 8px; line-height: 1.4;">
-                <span style="color: #F44336; font-weight: 600;">${group.displayName}</span> - 
-                <span>Correctly matched ${group.correctDimensions} dimensions</span> 
-                <span style="color: #555; font-size: 0.9em;">(Average accuracy: ${group.avgPerception.toFixed(1)}%)</span>
-            </li>`;
-            }).join('')}
-    </ul>
-    <p style="margin: 20px 0 0 0; font-style: italic; color: #666; font-size: 13px; text-align: center; padding-top: 15px; border-top: 1px dashed #e0e0e0;">
-        You can explore and discover more by selecting different filters below. You can only select one value for one filter at a time.
-    </p>
-</div>
-`;
+        <div style="margin: 0 0 0 30px; padding: 15px 20px; background-color: #f8f9fa; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.0); border-left: 4px solid ; font-family: 'Poppins', Arial, sans-serif;margin-bottom : 10px">
+            <h3 style="margin: 0 0 15px 0; color: #333; font-size: 16px; font-weight: 600;">Groups Most Accurately Identifying Your MBTI Type:</h3>
+            <ul style="margin: 0 0 20px 0; padding-left: 25px; list-style-type: disc;">
+                ${mostAccurate.map(group => {
+                    const dimensionColor = group.correctDimensions === 4 ? '#4CAF50' : '#4CAF50';
+                    const impressionTypeHtml = formatImpressionType(group.impressionType, MyMBTI);
+                    return `<li style="margin-bottom: 8px; line-height: 1.4;">
+                        <span style="color: ${dimensionColor}; font-weight: 600;">${group.displayName}</span> - 
+                        ${group.correctDimensions === 4
+                            ? `<span>Perfectly matched all 4 of your dimensions</span>`
+                            : `<span>Correctly matched ${group.correctDimensions} dimensions</span>`} 
+                        <span style="color: #555; font-size: 0.9em;">(Average impression: ${impressionTypeHtml}, Average accuracy: ${group.avgPerception.toFixed(1)}%)</span>
+                    </li>`;
+                }).join('')}
+            </ul>
+            
+            <h3 style="margin: 0 0 15px 0; color: #333; font-size: 16px; font-weight: 600; border-top: 1px solid #e0e0e0; padding-top: 15px;">Groups Least Accurately Identifying Your MBTI Type:</h3>
+            <ul style="margin: 0; padding-left: 25px; list-style-type: disc;">
+                ${leastAccurate.map(group => {
+                    const dimensionColor = group.correctDimensions === 4 ? '#F44336' : '#F44336';
+                    const impressionTypeHtml = formatImpressionType(group.impressionType, MyMBTI);
+                    return `<li style="margin-bottom: 8px; line-height: 1.4;">
+                        <span style="color: ${dimensionColor}; font-weight: 600;">${group.displayName}</span> - 
+                        
+                        <span style="color: #555; font-size: 0.9em;">Average impression: ${impressionTypeHtml}, Average accuracy: ${group.avgPerception.toFixed(1)}%</span>
+                    </li>`;
+                }).join('')}
+            </ul>
+            <p style="margin: 20px 0 0 0; font-style: italic; color: #666; font-size: 13px; text-align: center; padding-top: 15px; border-top: 1px dashed #e0e0e0;">
+                You can explore and discover more by selecting different filters below. You can only select one value for one filter at a time.
+            </p>
+        </div>
+        `;
 
             // 更新报告内容
-            accuracyReportElem.innerHTML = reportContent;// 插入到雷达图之前
+            accuracyReportElem.innerHTML = reportContent;
+            // 插入到雷达图之前
             const radarWrapper = document.querySelector('.filter-container');
             radarWrapper.parentNode.insertBefore(accuracyReportElem, radarWrapper);
 
@@ -1036,6 +1038,53 @@
                 }
             });
         }
+
+        // 计算群体的平均印象 MBTI 类型
+        function calculateImpressionType(data) {
+            if (!data || data.length === 0) return 'XXXX'; // 没有数据时返回占位符
+            
+            // 统计 I/E 维度
+            const eCnt = data.filter(p => p.ieStr === 'E').length;
+            const iCnt = data.length - eCnt;
+            const ieDimension = eCnt > iCnt ? 'E' : 'I';
+            
+            // 统计 N/S 维度
+            const nCnt = data.filter(p => p.nsStr === 'N').length;
+            const sCnt = data.length - nCnt;
+            const nsDimension = nCnt > sCnt ? 'N' : 'S';
+            
+            // 统计 F/T 维度
+            const fCnt = data.filter(p => p.ftStr === 'F').length;
+            const tCnt = data.length - fCnt;
+            const ftDimension = fCnt > tCnt ? 'F' : 'T';
+            
+            // 统计 J/P 维度
+            const jCnt = data.filter(p => p.jpStr === 'J').length;
+            const pCnt = data.length - jCnt;
+            const jpDimension = jCnt > pCnt ? 'J' : 'P';
+            
+            // 组合形成完整的 MBTI 类型
+            return ieDimension + nsDimension + ftDimension + jpDimension;
+        }
+
+        // 格式化印象类型，使得与 MyMBTI 一致的维度显示为绿色，不一致的显示为红色
+        function formatImpressionType(impressionType, myMBTI) {
+            if (!impressionType || impressionType === 'XXXX') return 'Unknown';
+            
+            const impressionChars = impressionType.split('');
+            const myMBTIChars = myMBTI.split('');
+            
+            let formattedType = '';
+            
+            for (let i = 0; i < 4; i++) {
+                const color = impressionChars[i] === myMBTIChars[i] ? '#4CAF50' : '#F44336';
+                formattedType += `<span style="color: ${color}; font-weight: 600;">${impressionChars[i]}</span>`;
+            }
+            
+            return formattedType;
+        }
+
+
         function updateSummary(totalCount, mistypeCount, mostCommonMistype,
             iPercent, ePercent, nPercent, sPercent,
             fPercent, tPercent, jPercent, pPercent) {
