@@ -28,13 +28,32 @@
             appId: "1:756176954275:web:7581e5e485e426b33ff016",
             measurementId: "G-B6F0F4JZ7E"
         };
-
+        
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
         const urlParams = new URLSearchParams(window.location.search);
         const username = urlParams.get("name");
         const filterType = urlParams.get("filter") || "relationshipType";
-        const MyMBTI = urlParams.get("mbti") || "ENFP";
+        const MyMBTI = urlParams.get("mbti");
+        let userTypeGroup = "", groupColor = "", groupDescription = "";
+        let topMisperceiveColor = "";
+        if (["INTJ", "INTP", "ENTJ", "ENTP"].includes(MyMBTI)) {
+            userTypeGroup = "Analysts";
+            groupColor = "#9B6784";
+            groupDescription = "rational, logical, and objective thinkers who excel at problem-solving and strategic planning";
+        } else if (["INFJ", "INFP", "ENFJ", "ENFP"].includes(MyMBTI)) {
+            userTypeGroup = "Diplomats";
+            groupColor = "#61AD89";
+            groupDescription = "empathetic, idealistic, and value-driven individuals who focus on personal growth and meaningful connections";
+        } else if (["ISTJ", "ISFJ", "ESTJ", "ESFJ"].includes(MyMBTI)) {
+            userTypeGroup = "Sentinels";
+            groupColor = "#80CCDF";
+            groupDescription = "practical, detail-oriented, and responsibility-focused individuals who value security and tradition";
+        } else if (["ISTP", "ISFP", "ESTP", "ESFP"].includes(MyMBTI)) {
+            userTypeGroup = "Explorers";
+            groupColor = "#E1C134";
+            groupDescription = "spontaneous, adaptable, and present-focused individuals who excel at practical problem-solving and enjoying the moment";
+        }
         // 在你的脚本里（确保在 MyMBTI 已经有值后运行）：
         const legendConfig = [
             { code: 'I/E', keys: ['I', 'E'], labels: ['Introverted', 'Extroverted'], css: 'ie-color' },
@@ -49,12 +68,12 @@
         document.addEventListener('DOMContentLoaded', async function () {
             // Update the MBTI title with the user's MBTI type from URL
             const mbtiParts = MyMBTI.split('');
-            document.getElementById("mbti-title").innerHTML = `Your MBTI Type: <span class="mbti-highlight" style=" color: #4CAF50;">${mbtiParts.join('')}</span>`;
+
+            document.getElementById("mbti-title").innerHTML = `Your MBTI Type: <span class="mbti-highlight" style=" color: ${groupColor};">${mbtiParts.join('')}</span>`;
 
             await fetchData();
             processData();
         });
-
         async function fetchData() {
             try {
                 const dbRef = ref(database, "responses");
@@ -201,7 +220,7 @@
             // Update UI
             updateSummary(allData.length, allData.filter(p => p.mbtiType !== MyMBTI).length,
                 mostCommonMistype, iPercent, ePercent, nPercent, sPercent,
-                fPercent, tPercent, jPercent, pPercent);
+                fPercent, tPercent, jPercent, pPercent, MyMBTI, mbtiCounts);
 
             filterConfigs.forEach(({ key, selectId }) => {
                 const sel = document.getElementById(selectId);
@@ -250,8 +269,463 @@
         let clickCount = 0;
         let activeNodesSet = new Set();
         let lastClickedNode = "none";
+
         // function drawFigure(mbtiCounts) {
         //     // 基础尺寸 - 调整图表尺寸
+        //     const typeGroups = [
+        //         { name: "Analysts", types: ["INTJ", "INTP", "ENTJ", "ENTP"], color: "#9B6784", lineColor: "#9B6784" },
+        //         { name: "Diplomats", types: ["INFJ", "INFP", "ENFJ", "ENFP"], color: "#61AD89", lineColor: "#61AD89" },
+        //         { name: "Sentinels", types: ["ISTJ", "ISFJ", "ESTJ", "ESFJ"], color: "#80CCDF", lineColor: "#80CCDF" },
+        //         { name: "Explorers", types: ["ISTP", "ISFP", "ESTP", "ESFP"], color: "#E1C134", lineColor: "#E1C134" }
+        //     ];
+
+        //     const baseWidth = 400;
+        //     const baseHeight = 400;
+        //     const marginTop = 40;
+        //     const marginLeft = 40;
+        //     const width = baseWidth;
+        //     const height = baseHeight;
+
+        //     // 清空之前的图表
+        //     d3.select('#mbtiSankeyChart').selectAll('*').remove();
+
+        //     // 创建 SVG，统一字体
+        //     const svg = d3.select('#mbtiSankeyChart')
+        //         .append('svg')
+        //         .attr('width', width)
+        //         .attr('height', height)
+        //         .style('font-family', 'Poppins, sans-serif')
+        //         .style('font-weight', 'bold');
+
+        //     // 真实类型与计数
+        //     const MyMBTI = (new URLSearchParams(window.location.search).get('mbti') || 'INFP').toUpperCase();
+        //     const allTypes = ['ISTJ', 'ISFJ', 'INFJ', 'INTJ', 'ISTP', 'ISFP', 'INFP', 'INTP', 'ESTP', 'ESFP', 'ENFP', 'ENTP', 'ESTJ', 'ESFJ', 'ENFJ', 'ENTJ'];
+
+        //     // 汉明距离计算
+        //     function hammingDistance(a, b) {
+        //         let distance = 0;
+        //         for (let i = 0; i < 4; i++) {
+        //             if (a[i] !== b[i]) distance++;
+        //         }
+        //         return distance;
+        //     }
+
+        //     // 获取MyMBTI的分组
+        //     const myTypeGroup = typeGroups.find(group => group.types.includes(MyMBTI));
+
+        //     // 找出对立的分组（我的MBTI类型所属分组的对立面）
+        //     let oppositeGroupIndex;
+        //     const myGroupIndex = typeGroups.findIndex(group => group.types.includes(MyMBTI));
+        //     if (myGroupIndex === 0) oppositeGroupIndex = 2; // Analysts >< Sentinels
+        //     else if (myGroupIndex === 1) oppositeGroupIndex = 3; // Diplomats >< Explorers
+        //     else if (myGroupIndex === 2) oppositeGroupIndex = 0; // Sentinels >< Analysts
+        //     else oppositeGroupIndex = 1; // Explorers >< Diplomats
+
+        //     const oppositeGroup = typeGroups[oppositeGroupIndex];
+
+        //     // 获取其他两个组
+        //     const otherGroupsIndices = [0, 1, 2, 3].filter(i => i !== myGroupIndex && i !== oppositeGroupIndex);
+        //     const otherGroups = [typeGroups[otherGroupsIndices[0]], typeGroups[otherGroupsIndices[1]]];
+
+        //     // 数据统计
+        //     const total = d3.sum(allTypes, t => mbtiCounts[t] || 0);
+
+        //     // 创建发光效果
+        //     const defs = svg.append('defs');
+        //     const filter = defs.append('filter')
+        //         .attr('id', 'glow')
+        //         .attr('x', '-50%')
+        //         .attr('y', '-50%')
+        //         .attr('width', '200%')
+        //         .attr('height', '200%');
+
+        //     filter.append('feGaussianBlur')
+        //         .attr('stdDeviation', '2.5')
+        //         .attr('result', 'coloredBlur');
+
+        //     const feMerge = filter.append('feMerge');
+        //     feMerge.append('feMergeNode')
+        //         .attr('in', 'coloredBlur');
+        //     feMerge.append('feMergeNode')
+        //         .attr('in', 'SourceGraphic');
+
+        //     // 主分组位移
+        //     const g = svg.append('g')
+        //         .attr('transform', `translate(0,0)`);
+
+        //     // 节点大小计算
+        //     function calculateNodeSize(ratio) {
+        //         if (ratio < 0.01) return 10;
+        //         return 10 + Math.sqrt(ratio * 100) * 4;
+        //     }
+
+        //     // 绘制组标题
+        //     function drawGroupLabels() {
+        //         // 左上角 - 我的MBTI类型组
+        //         svg.append('text')
+        //             .attr('x', marginLeft)
+        //             .attr('y', marginTop - 15)
+        //             .attr('text-anchor', 'start')
+        //             .attr('font-size', '14px')
+        //             .attr('font-weight', 'bold')
+        //             .attr('fill', myTypeGroup.color)
+        //             .text("-- " + myTypeGroup.name);
+
+        //         // 右上角 - 第一个其他组
+        //         svg.append('text')
+        //             .attr('x', width - marginLeft)
+        //             .attr('y', marginTop - 15)
+        //             .attr('text-anchor', 'end')
+        //             .attr('font-size', '14px')
+        //             .attr('font-weight', 'bold')
+        //             .attr('fill', otherGroups[0].color)
+        //             .text("-- " + otherGroups[0].name);
+
+        //         // 左下角 - 第二个其他组
+        //         svg.append('text')
+        //             .attr('x', marginLeft)
+        //             .attr('y', height - marginTop + 30)
+        //             .attr('text-anchor', 'start')
+        //             .attr('font-size', '14px')
+        //             .attr('font-weight', 'bold')
+        //             .attr('fill', otherGroups[1].color)
+        //             .text("-- " + otherGroups[1].name);
+
+        //         // 右下角 - 对立组
+        //         svg.append('text')
+        //             .attr('x', width - marginLeft)
+        //             .attr('y', height - marginTop + 30)
+        //             .attr('text-anchor', 'end')
+        //             .attr('font-size', '14px')
+        //             .attr('font-weight', 'bold')
+        //             .attr('fill', oppositeGroup.color)
+        //             .text("-- " + oppositeGroup.name);
+        //     }
+
+        //     // 按照与MyMBTI的差异排序类型
+        //     function sortTypesByDiff(types, myType) {
+        //         return types.sort((a, b) => {
+        //             const diffA = hammingDistance(a, myType);
+        //             const diffB = hammingDistance(b, myType);
+        //             return diffA - diffB; // 按照差异从小到大排序
+        //         });
+        //     }
+
+        //     // 新的角落放置函数
+        //     function renderMBTICircles() {
+        //         // 用于存储所有类型的位置和信息
+        //         const allTypeInfos = [];
+
+        //         // 对每个组内的类型按照与MyMBTI的差异排序
+        //         // 1. 左上角 - 我的MBTI类型组 (按照与MyMBTI的差异排序)
+        //         let myGroupTypes = sortTypesByDiff([...myTypeGroup.types], MyMBTI);
+
+        //         // 确保我的类型在数组第一位（虽然排序后它应该就在第一位）
+        //         const myTypeIndex = myGroupTypes.indexOf(MyMBTI);
+        //         if (myTypeIndex > 0) {
+        //             myGroupTypes.splice(myTypeIndex, 1);
+        //             myGroupTypes.unshift(MyMBTI);
+        //         }
+
+        //         // 计算左上角区域的中心
+        //         const topLeftCenter = {
+        //             x: marginLeft + (width / 2 - marginLeft) / 2,
+        //             y: marginTop + (height / 2 - marginTop) / 2
+        //         };
+
+        //         // 放置位置 - 对角线布局（左上、左下、右上、右下）
+        //         const positions = [
+        //             { x: topLeftCenter.x - 40, y: topLeftCenter.y - 40 }, // 左上 - 差异最小
+        //             { x: topLeftCenter.x - 40, y: topLeftCenter.y + 40 }, // 左下 - 差异第二小
+        //             { x: topLeftCenter.x + 40, y: topLeftCenter.y - 40 }, // 右上 - 差异第三小
+        //             { x: topLeftCenter.x + 40, y: topLeftCenter.y + 40 }  // 右下 - 差异最大
+        //         ];
+
+        //         myGroupTypes.forEach((type, i) => {
+        //             allTypeInfos.push({
+        //                 type: type,
+        //                 ratio: (mbtiCounts[type] || 0) / total,
+        //                 x: positions[i].x,
+        //                 y: positions[i].y,
+        //                 group: myTypeGroup,
+        //                 diff: hammingDistance(type, MyMBTI),
+        //                 position: i // 0: 左上, 1: 左下, 2: 右上, 3: 右下
+        //             });
+        //         });
+
+        //         // 2. 右上角 - 第一个其他组 (按照与MyMBTI的差异排序)
+        //         const group1Types = sortTypesByDiff([...otherGroups[0].types], MyMBTI);
+        //         const topRightCenter = {
+        //             x: width - marginLeft - (width / 2 - marginLeft) / 2,
+        //             y: marginTop + (height / 2 - marginTop) / 2
+        //         };
+
+        //         const positions2 = [
+        //             { x: topRightCenter.x - 40, y: topRightCenter.y - 40 }, // 左上 - 差异最小
+        //             { x: topRightCenter.x - 40, y: topRightCenter.y + 40 }, // 左下 - 差异第二小
+        //             { x: topRightCenter.x + 40, y: topRightCenter.y - 40 }, // 右上 - 差异第三小
+        //             { x: topRightCenter.x + 40, y: topRightCenter.y + 40 }  // 右下 - 差异最大
+        //         ];
+
+        //         group1Types.forEach((type, i) => {
+        //             allTypeInfos.push({
+        //                 type: type,
+        //                 ratio: (mbtiCounts[type] || 0) / total,
+        //                 x: positions2[i].x,
+        //                 y: positions2[i].y,
+        //                 group: otherGroups[0],
+        //                 diff: hammingDistance(type, MyMBTI),
+        //                 position: i // 0: 左上, 1: 左下, 2: 右上, 3: 右下
+        //             });
+        //         });
+
+        //         // 3. 左下角 - 第二个其他组 (按照与MyMBTI的差异排序)
+        //         const group2Types = sortTypesByDiff([...otherGroups[1].types], MyMBTI);
+        //         const bottomLeftCenter = {
+        //             x: marginLeft + (width / 2 - marginLeft) / 2,
+        //             y: height - marginTop - (height / 2 - marginTop) / 2
+        //         };
+
+        //         const positions3 = [
+        //             { x: bottomLeftCenter.x - 40, y: bottomLeftCenter.y - 40 }, // 左上 - 差异最小
+        //             { x: bottomLeftCenter.x - 40, y: bottomLeftCenter.y + 40 }, // 左下 - 差异第二小
+        //             { x: bottomLeftCenter.x + 40, y: bottomLeftCenter.y - 40 }, // 右上 - 差异第三小
+        //             { x: bottomLeftCenter.x + 40, y: bottomLeftCenter.y + 40 }  // 右下 - 差异最大
+        //         ];
+
+        //         group2Types.forEach((type, i) => {
+        //             allTypeInfos.push({
+        //                 type: type,
+        //                 ratio: (mbtiCounts[type] || 0) / total,
+        //                 x: positions3[i].x,
+        //                 y: positions3[i].y,
+        //                 group: otherGroups[1],
+        //                 diff: hammingDistance(type, MyMBTI),
+        //                 position: i // 0: 左上, 1: 左下, 2: 右上, 3: 右下
+        //             });
+        //         });
+
+        //         // 4. 右下角 - 对立组 (按照与MyMBTI的差异排序)
+        //         const oppositeTypes = sortTypesByDiff([...oppositeGroup.types], MyMBTI);
+        //         const bottomRightCenter = {
+        //             x: width - marginLeft - (width / 2 - marginLeft) / 2,
+        //             y: height - marginTop - (height / 2 - marginTop) / 2
+        //         };
+
+        //         const positions4 = [
+        //             { x: bottomRightCenter.x - 40, y: bottomRightCenter.y - 40 }, // 左上 - 差异最小
+        //             { x: bottomRightCenter.x - 40, y: bottomRightCenter.y + 40 }, // 左下 - 差异第二小
+        //             { x: bottomRightCenter.x + 40, y: bottomRightCenter.y - 40 }, // 右上 - 差异第三小
+        //             { x: bottomRightCenter.x + 40, y: bottomRightCenter.y + 40 }  // 右下 - 差异最大
+        //         ];
+
+        //         oppositeTypes.forEach((type, i) => {
+        //             allTypeInfos.push({
+        //                 type: type,
+        //                 ratio: (mbtiCounts[type] || 0) / total,
+        //                 x: positions4[i].x,
+        //                 y: positions4[i].y,
+        //                 group: oppositeGroup,
+        //                 diff: hammingDistance(type, MyMBTI),
+        //                 position: i // 0: 左上, 1: 左下, 2: 右上, 3: 右下
+        //             });
+        //         });
+
+        //         // 绘制所有圆圈
+        //         allTypeInfos.forEach(typeInfo => {
+        //             const nodeSize = calculateNodeSize(typeInfo.ratio);
+        //             const isMyType = typeInfo.type === MyMBTI;
+
+        //             // 创建节点组
+        //             const nodeGroup = g.append('g')
+        //                 .attr('class', `mbti-node-group`);
+
+        //             // 绘制圆圈
+        //             nodeGroup.append('circle')
+        //                 .attr('class', `mbti-node`)
+        //                 .attr('cx', typeInfo.x)
+        //                 .attr('cy', typeInfo.y)
+        //                 .attr('r', nodeSize / 1.5)
+        //                 .attr('fill', isMyType ? 'transparent' : '#D0D0D0')
+        //                 .attr('fill-opacity', 0.7)
+        //                 .attr('stroke', isMyType ? '#fff' : 'rgba(255,255,255,0.5)')
+        //                 .attr('stroke-width', isMyType ? 2 : 1)
+        //                 .attr('filter', 'url(#glow)')
+        //                 .style('transition', 'all 0.3s ease')
+        //                 .on('mouseover', function () {
+        //                     // 显示百分比标签
+        //                     d3.select(`#percent-${typeInfo.type}`)
+        //                         .style('opacity', 1);
+        //                 })
+        //                 .on('mouseout', function () {
+        //                     // 隐藏百分比标签
+        //                     d3.select(`#percent-${typeInfo.type}`)
+        //                         .style('opacity', 0);
+        //                 });
+
+        //             // 如果是我的类型，添加星星
+        //             if (isMyType) {
+        //                 const starSize = Math.max(5, nodeSize);
+        //                 nodeGroup.append('text')
+        //                     .attr('x', typeInfo.x)
+        //                     .attr('y', typeInfo.y)
+        //                     .attr('text-anchor', 'middle')
+        //                     .attr('dominant-baseline', 'central')
+        //                     .attr('font-size', `${starSize}px`)
+        //                     .attr('fill', '#FFD700')
+        //                     .attr('filter', 'url(#glow)')
+        //                     .text('★')
+        //                     .on('mouseover', function () {
+        //                         d3.select(`#percent-${typeInfo.type}`)
+        //                             .style('opacity', 1);
+        //                     })
+        //                     .on('mouseout', function () {
+        //                         d3.select(`#percent-${typeInfo.type}`)
+        //                             .style('opacity', 0);
+        //                     });
+        //             }
+
+        //             // 添加百分比提示文本
+        //             g.append('text')
+        //                 .attr('id', `percent-${typeInfo.type}`)
+        //                 .attr('x', typeInfo.x)
+        //                 .attr('y', typeInfo.y - nodeSize / 2)
+        //                 .attr('text-anchor', 'middle')
+        //                 .attr('font-size', '11px')
+        //                 .attr('font-weight', 'bold')
+        //                 .attr('fill', 'rgb(101, 78, 163)')
+        //                 .attr('stroke', 'rgba(0,0,0,0.5)')
+        //                 .attr('stroke-width', 0.5)
+        //                 .style('opacity', 0)
+        //                 .style('pointer-events', 'none')
+        //                 .style('transition', 'opacity 0.3s ease')
+        //                 .text(`${(typeInfo.ratio * 100).toFixed(1)}%`);
+
+        //             // 添加类型标签
+        //             const labelText = g.append('text')
+        //                 .attr('class', 'mbti-label')
+        //                 .attr('x', typeInfo.x)
+        //                 .attr('y', typeInfo.y + nodeSize / 1.5 + 4)
+        //                 .attr('text-anchor', 'middle')
+        //                 .attr('dy', '0.35em')
+        //                 .attr('font-size', '13px')
+        //                 .attr('font-weight', 'bold');
+
+        //             // 分析每个字母并添加下划线
+        //             labelText.text('');
+        //             for (let i = 0; i < 4; i++) {
+        //                 const charMyType = MyMBTI[i];
+        //                 const charThisType = typeInfo.type[i];
+        //                 const isDifferent = charMyType !== charThisType;
+
+        //                 labelText.append('tspan')
+        //                     .text(charThisType)
+        //                     .attr('text-decoration', isDifferent ? 'underline' : null);
+        //             }
+        //         });
+
+        //         // 绘制连接线 - 方形连接
+        //         function drawConnections() {
+        //             // 创建连线分组 - 放在最底层
+        //             const linkGroup = g.append('g')
+        //                 .attr('class', 'mbti-links')
+        //                 .lower();
+
+        //             // 为每个组绘制特定方向的连接线
+        //             typeGroups.forEach(group => {
+        //                 // 找出当前组的所有类型
+        //                 const groupTypeInfos = allTypeInfos.filter(t => t.group === group);
+
+        //                 // 找出四个角落的位置
+        //                 const leftTop = groupTypeInfos.find(t => t.position === 0);
+        //                 const leftBottom = groupTypeInfos.find(t => t.position === 1);
+        //                 const rightTop = groupTypeInfos.find(t => t.position === 2);
+        //                 const rightBottom = groupTypeInfos.find(t => t.position === 3);
+
+        //                 if (leftTop && leftBottom) {
+        //                     // 左上到左下
+        //                     linkGroup.append('path')
+        //                         .attr('d', `M ${leftTop.x} ${leftTop.y} L ${leftBottom.x} ${leftBottom.y}`)
+        //                         .attr('stroke', group.lineColor)
+        //                         .attr('stroke-width', 2)
+        //                         .attr('stroke-opacity', 0.8)
+        //                         .attr('stroke-dasharray', '5,3')
+        //                         .attr('fill', 'none')
+        //                         .lower();
+        //                 }
+
+        //                 if (leftTop && rightTop) {
+        //                     // 左上到右上
+        //                     linkGroup.append('path')
+        //                         .attr('d', `M ${leftTop.x} ${leftTop.y} L ${rightTop.x} ${rightTop.y}`)
+        //                         .attr('stroke', group.lineColor)
+        //                         .attr('stroke-width', 2)
+        //                         .attr('stroke-opacity', 0.8)
+        //                         .attr('stroke-dasharray', '5,3')
+        //                         .attr('fill', 'none')
+        //                         .lower();
+        //                 }
+
+        //                 if (leftBottom && rightBottom) {
+        //                     // 左下到右下
+        //                     linkGroup.append('path')
+        //                         .attr('d', `M ${leftBottom.x} ${leftBottom.y} L ${rightBottom.x} ${rightBottom.y}`)
+        //                         .attr('stroke', group.lineColor)
+        //                         .attr('stroke-width', 2)
+        //                         .attr('stroke-opacity', 0.8)
+        //                         .attr('stroke-dasharray', '5,3')
+        //                         .attr('fill', 'none')
+        //                         .lower();
+        //                 }
+
+        //                 if (rightTop && rightBottom) {
+        //                     // 右上到右下
+        //                     linkGroup.append('path')
+        //                         .attr('d', `M ${rightTop.x} ${rightTop.y} L ${rightBottom.x} ${rightBottom.y}`)
+        //                         .attr('stroke', group.lineColor)
+        //                         .attr('stroke-width', 2)
+        //                         .attr('stroke-opacity', 0.8)
+        //                         .attr('stroke-dasharray', '5,3')
+        //                         .attr('fill', 'none')
+        //                         .lower();
+        //                 }
+
+        //                 // 为每个类型添加组指示器环
+        //                 groupTypeInfos.forEach(typeInfo => {
+        //                     const nodeSize = calculateNodeSize(typeInfo.ratio);
+        //                     linkGroup.append('circle')
+        //                         .attr('cx', typeInfo.x)
+        //                         .attr('cy', typeInfo.y)
+        //                         .attr('r', nodeSize * 0.7)
+        //                         .attr('fill', 'none')
+        //                         .attr('stroke', group.lineColor)
+        //                         .attr('stroke-width', 1.5)
+        //                         .attr('stroke-opacity', 1)
+        //                         .lower();
+        //                 });
+        //             });
+        //         }
+
+        //         // 绘制连接线
+        //         drawConnections();
+        //     }
+
+        //     // 执行绘图
+        //     drawGroupLabels();
+        //     renderMBTICircles();
+        // }
+
+
+        // //
+        //  function drawFigure(mbtiCounts) {
+        //     // 基础尺寸 - 调整图表尺寸
+        //     const typeGroups = [
+        //         { name: "Analysts", types: ["INTJ", "INTP", "ENTJ", "ENTP"], color: "#9B6784", lineColor: "#9B6784" },
+        //         { name: "Diplomats", types: ["INFJ", "INFP", "ENFJ", "ENFP"], color: "#61AD89", lineColor: "#61AD89" },
+        //         { name: "Sentinels", types: ["ISTJ", "ISFJ", "ESTJ", "ESFJ"], color: "#80CCDF", lineColor: "#80CCDF" },
+        //         { name: "Explorers", types: ["ISTP", "ISFP", "ESTP", "ESFP"], color: "#E1C134", lineColor: "#E1C134" }
+        //     ];
+
         //     const baseWidth = 400;
         //     const baseHeight = 400; // 增加高度以适应更多内容
         //     const marginTop = 10;  // 减少顶部边距
@@ -271,7 +745,7 @@
         //         .style('font-weight', 'bold');
 
         //     // 真实类型与计数
-        //     const MyMBTI = (new URLSearchParams(window.location.search).get('mbti') || 'INFP').toUpperCase();
+
         //     const allTypes = ['ISTJ', 'ISFJ', 'INFJ', 'INTJ', 'ISTP', 'ISFP', 'INFP', 'INTP', 'ESTP', 'ESFP', 'ENFP', 'ENTP', 'ESTJ', 'ESFJ', 'ENFJ', 'ENTJ'];
 
         //     // 数据统计
@@ -282,23 +756,6 @@
 
         //     // 计算最多的类型占整体的百分比
         //     const max_ratio = maxType / total;
-        //     // 绿色-黄色-红色渐变的颜色比例尺
-        //     const colorScale = d3.scaleSequential()
-        //         .domain([0, max_ratio])
-        //         .interpolator(t => {
-        //             // t值小于0.5时，从绿色过渡到黄色
-        //             // t值大于0.5时，从黄色过渡到红色
-        //             if (t < 0.5) {
-        //                 // 0-0.5范围映射到绿色-黄色
-        //                 const normalizedT = t * 2; // 将0-0.5映射到0-1
-        //                 return d3.interpolateRgb('rgb(30, 150, 0)', 'rgb(255, 242, 0)')(normalizedT);
-        //             } else {
-        //                 // 0.5-1范围映射到黄色-红色
-        //                 const normalizedT = (t - 0.5) * 2; // 将0.5-1映射到0-1
-        //                 return d3.interpolateRgb('rgb(255, 242, 0)', 'rgb(0, 0, 255)')(normalizedT);
-        //             }
-        //         })
-        //         .clamp(true);
 
         //     // 创建发光效果
         //     const defs = svg.append('defs');
@@ -372,64 +829,6 @@
         //         return grouped;
         //     }
 
-        //     // 绘制图例
-        //     function drawLegend() {
-        //         const legendH = 180;
-        //         const legendG = svg.append('g')
-        //             .attr('transform', `translate(${width - 40},${marginTop + 50})`);
-
-        //         // 创建渐变色定义
-        //         // 创建渐变色定义 - 从黑色到黄色
-        //         const grad = defs.append('linearGradient')
-        //             .attr('id', 'lg')
-        //             .attr('x1', '0%').attr('y1', '100%')
-        //             .attr('x2', '0%').attr('y2', '0%');
-        //         // 绿色-黄色-红色渐变
-        //         grad.append('stop').attr('offset', '0%').attr('stop-color', 'rgb(30, 150, 0)');    // 绿色
-        //         grad.append('stop').attr('offset', '50%').attr('stop-color', 'rgb(255, 242, 0)');  // 黄色
-        //         grad.append('stop').attr('offset', '100%').attr('stop-color', 'rgb(0, 0, 255)');   // 红色
-        //         // 绘制图例矩形
-        //         legendG.append('rect')
-        //             .attr('width', 8)
-        //             .attr('height', legendH)
-        //             .style('fill', 'url(#lg)')
-        //             .style('fill-opacity', 0.8)  // 半透明
-        //             .style('stroke', 'rgba(255,255,255,0.5)')  // 白色边框
-        //             .style('stroke-width', 1)
-        //             .attr('filter', 'url(#glow)');  // 应用发光效果
-
-        //         // 创建比例尺和坐标轴
-        //         const ls = d3.scaleLinear().domain([0, max_ratio]).range([legendH, 0]);
-        //         const maxTick = Math.ceil(max_ratio * 100) / 100;
-
-        //         // 计算等距刻度值
-        //         const tickStep = maxTick / 4;
-        //         const ticks = [];
-        //         for (let i = 0; i <= 4; i++) {
-        //             ticks.push(Math.round(i * tickStep * 100) / 100);
-        //         }
-
-        //         const laxis = d3.axisRight(ls)
-        //             .tickValues(ticks)
-        //             .tickFormat(d3.format('.0%'));
-        //         const axisG = legendG.append('g')
-        //             .attr('transform', 'translate(10,0)')
-        //             .call(laxis);
-        //         axisG.selectAll('text')
-        //             .attr('fill', '#333')
-        //             .attr('font-size', '9px')
-        //             .attr('font-weight', '500');
-
-        //         // 图例标题
-        //         // legendG.append('text')
-        //         //     .attr('x', -10)
-        //         //     .attr('y', -10)
-        //         //     .attr('text-anchor', 'start')
-        //         //     .attr('font-size', '12px')
-        //         //     .attr('font-weight', 'bold')
-        //         //     .text('');
-        //     }
-
         //     // 绘制列标题
         //     function drawColumnHeaders() {
         //         const titles = [
@@ -439,18 +838,15 @@
         //             '3 diffs',
         //             '4 diffs'
         //         ];
-
         //         // 将标题移到SVG顶部
         //         const columnWidth = (baseWidth - marginLeft - 40) / 5;
-
         //         // 创建标题行
         //         const titleGroup = svg.append('g')
         //             .attr('transform', `translate(${marginLeft}, 20)`);
-
         //         titles.forEach((title, i) => {
         //             titleGroup.append('text')
         //                 .attr('x', i * columnWidth + columnWidth / 2)
-        //                 .attr('y', 0)
+        //                 .attr('y', 60)
         //                 .attr('text-anchor', 'middle')
         //                 .attr('font-size', '14px')
         //                 .attr('font-weight', 'bold')
@@ -497,7 +893,7 @@
 
         //                 // 设置节点位置
         //                 typeInfo.x = nodeX;
-        //                 typeInfo.y = nodeY +40;
+        //                 typeInfo.y = nodeY + 40;
         //             });
         //         }
 
@@ -511,14 +907,14 @@
         //                 const nodeGroup = g.append('g')
         //                     .attr('class', `mbti-node-group diff-${diffIndex}`);
 
-        //                 // 绘制圆圈
+        //                 // 绘制圆圈 - 使用单一颜色
         //                 nodeGroup.append('circle')
         //                     .attr('class', `mbti-node diff-${diffIndex}`)
         //                     .attr('cx', typeInfo.x)
         //                     .attr('cy', typeInfo.y)
-        //                     .attr('r', nodeSize / 2)
-        //                     .attr('fill', '#ffffff')
-        //                     .attr('fill-opacity', 0.6)
+        //                     .attr('r', nodeSize / 1.5)
+        //                     .attr('fill', isMyType ? 'transparent' : '#D0D0D0') // 自己的类型使用透明填充，其他类型使用灰色
+        //                     .attr('fill-opacity', 0.7)
         //                     .attr('stroke', isMyType ? '#fff' : 'rgba(255,255,255,0.5)')
         //                     .attr('stroke-width', isMyType ? 2 : 1)
         //                     .attr('filter', 'url(#glow)')
@@ -529,14 +925,38 @@
         //                             .style('opacity', 1);
         //                     })
         //                     .on('mouseout', function () {
-
         //                         // 隐藏百分比标签
         //                         d3.select(`#percent-${typeInfo.type}`)
         //                             .style('opacity', 0);
         //                     });
+        //                 // 如果是我的类型（isMyType），则直接在圆圈内添加星星
+        //                 if (isMyType) {
+        //                     // 星星大小根据节点比例变化
+        //                     const starSize = Math.max(5, nodeSize);
+        //                     nodeGroup.append('text')
+        //                         .attr('x', typeInfo.x)
+        //                         .attr('y', typeInfo.y)
+        //                         .attr('text-anchor', 'middle')
+        //                         .attr('dominant-baseline', 'central') // 使星星居中
+        //                         .attr('font-size', `${starSize}px`)
+        //                         .attr('fill', '#FFD700') // 金色星星
+        //                         .attr('filter', 'url(#glow)')
+        //                         .text('★') // 实心星星符号
+        //                         .on('mouseover', function () {
+        //                             // 显示百分比标签
+        //                             d3.select(`#percent-${typeInfo.type}`)
+        //                                 .style('opacity', 1);
+        //                         })
+        //                         .on('mouseout', function () {
+        //                             // 隐藏百分比标签
+        //                             d3.select(`#percent-${typeInfo.type}`)
+        //                                 .style('opacity', 0);
+        //                         });
+
+        //                 }
         //             });
         //         });
-        //         // 替换drawTypeRelationships函数，使用更清晰的分组与连线
+
         //         function drawBottomGroupLabels(typeGroups) {
         //             // 获取列宽，与列标题一致
         //             const columnWidth = (baseWidth - marginLeft - 40) / 5;
@@ -552,9 +972,7 @@
         //             // 添加分组指示器和标签
         //             typeGroups.forEach((group, index) => {
         //                 // 计算每个分组标签的X位置，均匀分布
-        //                 const labelX = (index + 0.5) * ((baseWidth - marginLeft) / typeGroups.length) -40;
-
-        //                 // 创建圆点指示器
+        //                 const labelX = (index + 0.5) * ((baseWidth - marginLeft) / typeGroups.length) - 40;
 
         //                 // 添加分组文字标签
         //                 bottomGroup.append('text')
@@ -565,7 +983,7 @@
         //                     .attr('font-size', '11px')
         //                     .attr('font-weight', 'bold')
         //                     .attr('fill', group.color)
-        //                     .text("-- "+group.name);
+        //                     .text("-- " + group.name);
         //             });
         //         }
 
@@ -584,12 +1002,6 @@
         //                 .lower(); // 确保在圆圈下方
 
         //             // 定义MBTI分组及其颜色
-        //             const typeGroups = [
-        //                 { name: "Analysts", types: ["INTJ", "INTP", "ENTJ", "ENTP"], color: "#5A8CDF", lineColor: "#5A8CDF" },
-        //                 { name: "Diplomats", types: ["INFJ", "INFP", "ENFJ", "ENFP"], color: "#66BB6A", lineColor: "#66BB6A" },
-        //                 { name: "Sentinels", types: ["ISTJ", "ISFJ", "ESTJ", "ESFJ"], color: "#FFB74D", lineColor: "#FFB74D" },
-        //                 { name: "Explorers", types: ["ISTP", "ISFP", "ESTP", "ESFP"], color: "#EF5350", lineColor: "#EF5350" }
-        //             ];
 
         //             // 先绘制所有分组的连线网络
         //             typeGroups.forEach(group => {
@@ -606,7 +1018,7 @@
         //                             .attr('d', `M ${conn.source.x} ${conn.source.y} L ${conn.target.x} ${conn.target.y}`)
         //                             .attr('stroke', group.lineColor)
         //                             .attr('stroke-width', 1.5)
-        //                             .attr('stroke-opacity', 0.4)
+        //                             .attr('stroke-opacity', 1)
         //                             .attr('stroke-dasharray', '5,3')
         //                             .attr('fill', 'none')
         //                             .lower();
@@ -629,21 +1041,11 @@
         //                         .attr('fill', 'none')
         //                         .attr('stroke', group.lineColor)
         //                         .attr('stroke-width', 1.5)
-        //                         .attr('stroke-opacity', 0.3)
+        //                         .attr('stroke-opacity', 1)
         //                         .lower();
         //                 }
         //             });
         //             drawBottomGroupLabels(typeGroups);
-        //         }
-
-        //         // 计算点集的中心位置
-        //         function calculateCentroid(points) {
-        //             const sumX = points.reduce((sum, p) => sum + p.x, 0);
-        //             const sumY = points.reduce((sum, p) => sum + p.y, 0);
-        //             return {
-        //                 x: sumX / points.length,
-        //                 y: sumY / points.length
-        //             };
         //         }
 
         //         // 构建最小生成树 - 用于连接同组内的MBTI类型
@@ -706,27 +1108,14 @@
         //             return result;
         //         }
 
-        //         // 更新颜色比例尺函数 - 使用更适合四大分组的色彩方案
-        //         function updateColorScale() {
-        //             // 创建更有区分度的颜色比例尺
-        //             const newColorScale = function (ratio) {
-        //                 // 为每个比例范围分配固定颜色，确保视觉区分
-        //                 if (ratio < 0.01) return '#2d1160'; // 极低 - 深紫色
-        //                 if (ratio < 0.03) return '#472f7d'; // 很低 - 紫色
-        //                 if (ratio < 0.05) return '#3b5e8c'; // 低 - 蓝紫色
-        //                 if (ratio < 0.08) return '#1f968b'; // 较低 - 蓝绿色
-        //                 if (ratio < 0.12) return '#3cb44b'; // 中 - 绿色
-        //                 if (ratio < 0.18) return '#aadb32'; // 中高 - 黄绿色
-        //                 if (ratio < 0.25) return '#fff200'; // 高 - 黄色
-
-        //                 // 极高 - 金黄色
-        //                 return '#ffd700';
+        //         // 计算点集的中心位置
+        //         function calculateCentroid(points) {
+        //             const sumX = points.reduce((sum, p) => sum + p.x, 0);
+        //             const sumY = points.reduce((sum, p) => sum + p.y, 0);
+        //             return {
+        //                 x: sumX / points.length,
+        //                 y: sumY / points.length
         //             };
-
-        //             // 更新图例渐变
-        //             updateLegendGradient(newColorScale);
-
-        //             return newColorScale;
         //         }
 
         //         // 将圆圈大小放大一些，使视觉效果更明显
@@ -737,81 +1126,9 @@
         //             return 10 + Math.sqrt(ratio * 100) * 4.5;
         //         }
 
-        //         function updateLegendGradient(colorScaleFunc) {
-        //             // 清除现有的渐变定义
-        //             defs.select('#lg').remove();
-
-        //             // 创建新的渐变定义
-        //             const grad = defs.append('linearGradient')
-        //                 .attr('id', 'lg')
-        //                 .attr('x1', '0%').attr('y1', '100%')
-        //                 .attr('x2', '0%').attr('y2', '0%');
-
-        //             // 添加颜色停止点，确保与比例尺匹配
-        //             grad.append('stop').attr('offset', '0%').attr('stop-color', '#2d1160');   // 0%
-        //             grad.append('stop').attr('offset', '10%').attr('stop-color', '#472f7d');  // 2%
-        //             grad.append('stop').attr('offset', '25%').attr('stop-color', '#3b5e8c');  // 5%
-        //             grad.append('stop').attr('offset', '50%').attr('stop-color', '#1f968b');  // 10%
-        //             grad.append('stop').attr('offset', '75%').attr('stop-color', '#3cb44b');  // 15%
-        //             grad.append('stop').attr('offset', '90%').attr('stop-color', '#d0e11c');  // 20%
-        //             grad.append('stop').attr('offset', '100%').attr('stop-color', '#fff620'); // 最大值
-
-        //             // 更新图例矩形
-        //             d3.select('rect[style*="url(#lg)"]')
-        //                 .style('fill', 'url(#lg)')
-        //                 .style('fill-opacity', 1);
-        //         }
-
-        //         // 修改渐变色方案 - 使用viridis配色
-        //         function updateColorScale() {
-        //             // 创建更有区分度的颜色比例尺 - 即使对低比例值也有明显差异
-        //             const newColorScale = function (ratio) {
-        //                 // 为低比例值提供固定的颜色，确保视觉差异
-        //                 if (ratio === 0) return '#2d1160'; // 非常低 - 深紫色
-        //                 if (ratio < 0.02) return '#472f7d'; // 很低 - 紫色
-        //                 if (ratio < 0.05) return '#3b5e8c'; // 低 - 蓝紫色
-        //                 if (ratio < 0.10) return '#1f968b'; // 中低 - 蓝绿色
-        //                 if (ratio < 0.15) return '#3cb44b'; // 中 - 绿色
-        //                 if (ratio < 0.20) return '#d0e11c'; // 中高 - 黄绿色
-
-        //                 // 高值 - 黄色
-        //                 return '#fff620';
-        //             };
-
-        //             // 更新图例渐变
-        //             updateLegendGradient(newColorScale);
-
-        //             return newColorScale;
-        //         }
-        //         // 在你的代码中插入这些函数
-        //         // 1. 使用新的颜色比例尺
-        //         const updatedColorScale = updateColorScale();
-
-        //         // 2. 更新所有圆圈使用新的颜色方案
-        //         // 2. 更新所有圆圈使用新的颜色方案
-        //         d3.selectAll('.mbti-node')
-        //             .attr('fill', function () {
-        //                 // 获取节点的圆圈对应的类型数据
-        //                 const circle = d3.select(this);
-        //                 const cx = +circle.attr('cx');
-        //                 const cy = +circle.attr('cy');
-
-        //                 // 在所有组中查找匹配的类型
-        //                 let matchedType = null;
-        //                 groupedTypes.forEach(group => {
-        //                     group.forEach(typeInfo => {
-        //                         if (Math.abs(typeInfo.x - cx) < 0.1 && Math.abs(typeInfo.y - cy) < 0.1) {
-        //                             matchedType = typeInfo;
-        //                         }
-        //                     });
-        //                 });
-
-        //                 // 应用颜色
-        //                 return matchedType ? updatedColorScale(matchedType.ratio) : updatedColorScale(0);
-        //             })
-        //             .attr('fill-opacity', 0.85); // 增加不透明度使颜色更明显
         //         // 3. 绘制类型关系 - 确保所有组都显示
         //         drawTypeRelationships();
+
         //         // 然后绘制所有文字标签，确保它们在所有圆圈的上方
         //         groupedTypes.forEach((group, diffIndex) => {
         //             group.forEach((typeInfo) => {
@@ -826,7 +1143,7 @@
         //                 textGroup.append('text')
         //                     .attr('id', `percent-${typeInfo.type}`)
         //                     .attr('x', typeInfo.x)
-        //                     .attr('y', typeInfo.y - nodeSize / 2) // 文本放在圆圈下方
+        //                     .attr('y', typeInfo.y - nodeSize ) // 文本放在圆圈上方
         //                     .attr('text-anchor', 'middle')
         //                     .attr('font-size', '11px')
         //                     .attr('font-weight', 'bold')
@@ -838,38 +1155,38 @@
         //                     .style('transition', 'opacity 0.3s ease')
         //                     .text(`${(typeInfo.ratio * 100).toFixed(1)}%`);
 
-        //                 // 为我的类型添加星星标记
-        //                 if (isMyType) {
-        //                     textGroup.append('text')
-        //                         .attr('x', typeInfo.x)
-        //                         .attr('y', typeInfo.y - nodeSize)
-        //                         .attr('text-anchor', 'middle')
-        //                         .attr('font-size', '16px')
-        //                         .attr('fill', '#FFD700')
-        //                         .attr('filter', 'url(#glow)')
-        //                         .text('⭐');
-        //                 }
 
-        //                 // 绘制类型文本标签
-        //                 textGroup.append('text')
+        //                 const labelText = textGroup.append('text')
         //                     .attr('class', 'mbti-label')
         //                     .attr('x', typeInfo.x)
-        //                     .attr('y', typeInfo.y + nodeSize + 4)
+        //                     .attr('y', typeInfo.y + nodeSize + 2)
         //                     .attr('text-anchor', 'middle')
         //                     .attr('dy', '0.35em')
-        //                     .attr('font-size', '13px')
-        //                     .attr('font-weight', 'bold')
-        //                     .text(typeInfo.type);
+        //                     .attr('font-size', '10px')
+
+        //                 console.log(typeInfo.type);
+        //                 // 分析每个字母并添加适当颜色
+        //                 labelText.text('');  // 清空文本以添加带格式的内容
+        //                 for (let i = 0; i < 4; i++) {
+        //                     const charMyType = MyMBTI[i];
+        //                     const charThisType = typeInfo.type[i];
+
+        //                     const isDifferent = charMyType !== charThisType;
+
+        //                     labelText.append('tspan')
+        //                         .text(charThisType)
+        //                         .attr('text-decoration', isDifferent ? 'underline' : null);  // 不同的字母变红
+        //                 }
         //             });
         //         });
         //     }
+
         //     // 执行绘图
-
         //     drawColumnHeaders();
-        //     drawLegend();
+        //     // 移除 drawLegend() 调用，不再显示图例
         //     renderMBTICircles();
-
         // }
+
         function drawFigure(mbtiCounts) {
             // 基础尺寸 - 调整图表尺寸
             const typeGroups = [
@@ -985,11 +1302,11 @@
             // 绘制列标题
             function drawColumnHeaders() {
                 const titles = [
-                    ' Your Type',
-                    '1 diff',
-                    '2 diffs',
-                    '3 diffs',
-                    '4 diffs'
+                    '★★★★ ',
+                    '★★★☆ ',
+                    '★★☆☆',
+                    '★☆☆☆',
+                    '☆☆☆☆'
                 ];
                 // 将标题移到SVG顶部
                 const columnWidth = (baseWidth - marginLeft - 40) / 5;
@@ -999,12 +1316,25 @@
                 titles.forEach((title, i) => {
                     titleGroup.append('text')
                         .attr('x', i * columnWidth + columnWidth / 2)
-                        .attr('y', 60)
+                        .attr('y', 30)
                         .attr('text-anchor', 'middle')
-                        .attr('font-size', '14px')
+                        .attr('font-size', '10px')
                         .attr('font-weight', 'bold')
                         .text(title);
                 });
+
+                // 添加灰色分隔线
+                for (let i = 1; i < 5; i++) {
+                    svg.append('line')
+                        .attr('x1', marginLeft + i * columnWidth)
+                        .attr('y1', 80) // 从标题下方开始
+                        .attr('x2', marginLeft + i * columnWidth)
+                        .attr('y2', height - 20) // 到图表底部结束
+                        .attr('stroke', '#D3D3D3') // 浅灰色
+                        .attr('stroke-width', 2)
+                        .attr('stroke-dasharray', '4,4') // 虚线效果
+                        .attr('opacity', 0.7); // 半透明
+                }
             }
 
             // 绘制 MBTI 类型圆圈和文本
@@ -1046,7 +1376,7 @@
 
                         // 设置节点位置
                         typeInfo.x = nodeX;
-                        typeInfo.y = nodeY + 40;
+                        typeInfo.y = nodeY + 20;
                     });
                 }
 
@@ -1092,7 +1422,7 @@
                                 .attr('text-anchor', 'middle')
                                 .attr('dominant-baseline', 'central') // 使星星居中
                                 .attr('font-size', `${starSize}px`)
-                                .attr('fill', '#FFD700') // 金色星星
+                                .attr('fill', groupColor) // 金色星星
                                 .attr('filter', 'url(#glow)')
                                 .text('★') // 实心星星符号
                                 .on('mouseover', function () {
@@ -1105,7 +1435,6 @@
                                     d3.select(`#percent-${typeInfo.type}`)
                                         .style('opacity', 0);
                                 });
-
                         }
                     });
                 });
@@ -1115,7 +1444,7 @@
                     const columnWidth = (baseWidth - marginLeft - 40) / 5;
 
                     // 计算底部标签的Y位置 - 在图表底部
-                    const bottomY = baseHeight - 360; // 距离底部25像素
+                    const bottomY = baseHeight - 390; // 距离底部25像素
 
                     // 创建底部标签分组
                     const bottomGroup = svg.append('g')
@@ -1153,8 +1482,6 @@
                     const linkGroup = g.append('g')
                         .attr('class', 'mbti-links')
                         .lower(); // 确保在圆圈下方
-
-                    // 定义MBTI分组及其颜色
 
                     // 先绘制所有分组的连线网络
                     typeGroups.forEach(group => {
@@ -1296,7 +1623,7 @@
                         textGroup.append('text')
                             .attr('id', `percent-${typeInfo.type}`)
                             .attr('x', typeInfo.x)
-                            .attr('y', typeInfo.y - nodeSize / 2) // 文本放在圆圈上方
+                            .attr('y', typeInfo.y - nodeSize) // 文本放在圆圈上方
                             .attr('text-anchor', 'middle')
                             .attr('font-size', '11px')
                             .attr('font-weight', 'bold')
@@ -1308,15 +1635,13 @@
                             .style('transition', 'opacity 0.3s ease')
                             .text(`${(typeInfo.ratio * 100).toFixed(1)}%`);
 
-
                         const labelText = textGroup.append('text')
                             .attr('class', 'mbti-label')
                             .attr('x', typeInfo.x)
-                            .attr('y', typeInfo.y + nodeSize + 4)
+                            .attr('y', typeInfo.y + nodeSize + 2)
                             .attr('text-anchor', 'middle')
                             .attr('dy', '0.35em')
-                            .attr('font-size', '13px')
-                         
+                            .attr('font-size', '10px');
 
                         // 分析每个字母并添加适当颜色
                         labelText.text('');  // 清空文本以添加带格式的内容
@@ -1327,8 +1652,7 @@
 
                             labelText.append('tspan')
                                 .text(charThisType)
-                                .attr('text-decoration', isDifferent ? 'underline' : null);  // 不同的字母变红
-                                //.attr('text-decoration', isDifferent ? 'underline' : null);  // 不同的字母加下划线
+                                .attr('text-decoration', isDifferent ? 'underline' : null);  // 不同的字母加下划线
                         }
                     });
                 });
@@ -1336,7 +1660,6 @@
 
             // 执行绘图
             drawColumnHeaders();
-            // 移除 drawLegend() 调用，不再显示图例
             renderMBTICircles();
         }
         function onFilterChange(e) {
@@ -1460,21 +1783,20 @@
 
             let reportContent = `
         <div style="margin: 0 0 0 30px; padding: 15px 20px; background-color: #f8f9fa; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.0); border-left: 4px solid ; font-family: 'Poppins', Arial, sans-serif;margin-bottom : 10px">
-            <h3 style="margin: 0 0 15px 0; color: #333; font-size: 16px; font-weight: 600;">Groups Most Accurately Identifying Your MBTI Type:</h3>
-            <ul style="margin: 0 0 20px 0; padding-left: 25px; list-style-type: disc;">
+            <h3 style="margin: 0 0 15px 0; color: #333; font-size: 14px; font-weight: 600;">Groups Most Accurately Identifying Your MBTI Type:</h3>
+            <ul style="margin: 0 0 20px 0; padding-left: 25px; list-style-type: disc;font-size: 12px;">
                 ${mostAccurate.map(group => {
-                const dimensionColor = group.correctDimensions === 4 ? '#4CAF50' : '#4CAF50';
+                const dimensionColor = group.correctDimensions === 4 ? groupColor : groupColor ;
                 const impressionTypeHtml = formatImpressionType(group.impressionType, MyMBTI);
                 return `<li style="margin-bottom: 8px; line-height: 1.4;">
                         <span style="color: ${dimensionColor}; font-weight: 600;">${group.displayName}
-                      
                         <span style="color: #555; "> - Average impression: ${impressionTypeHtml}, Average accuracy: ${group.avgPerception.toFixed(1)}%</span>
                     </li>`;
             }).join('')}
             </ul>
             
-            <h3 style="margin: 0 0 15px 0; color: #333; font-size: 16px; font-weight: 600; border-top: 1px solid #e0e0e0; padding-top: 15px;">Groups Least Accurately Identifying Your MBTI Type:</h3>
-            <ul style="margin: 0; padding-left: 25px; list-style-type: disc;">
+            <h3 style="margin: 0 0 15px 0; color: #333; font-size: 14px; font-weight: 600; border-top: 1px solid #e0e0e0; padding-top: 15px;">Groups Least Accurately Identifying Your MBTI Type:</h3>
+            <ul style="margin: 0; padding-left: 25px; list-style-type: disc;font-size: 12px;">
                 ${leastAccurate.map(group => {
                 const dimensionColor = group.correctDimensions === 4 ? '#F44336' : '#F44336';
                 const impressionTypeHtml = formatImpressionType(group.impressionType, MyMBTI);
@@ -1484,7 +1806,7 @@
                     </li>`;
             }).join('')}
             </ul>
-            <p style="margin: 20px 0 0 0; font-style: italic; color: #666; font-size: 13px; text-align: center; padding-top: 15px; border-top: 1px dashed #e0e0e0;">
+            <p style="margin: 20px 0 0 0; font-style: italic; color: #666; font-size: 12px; text-align: left;">
                 You can explore and discover more by selecting different filters below. You can only select one value for one filter at a time.
             </p>
         </div>
@@ -1608,7 +1930,7 @@
             let formattedType = '';
 
             for (let i = 0; i < 4; i++) {
-                const color = impressionChars[i] === myMBTIChars[i] ? '#4CAF50' : '#F44336';
+                const color = impressionChars[i] === myMBTIChars[i] ? groupColor  : '#F44336';
                 formattedType += `<span style="color: ${color}; font-weight: 600;">${impressionChars[i]}</span>`;
             }
 
@@ -1618,20 +1940,98 @@
 
         function updateSummary(totalCount, mistypeCount, mostCommonMistype,
             iPercent, ePercent, nPercent, sPercent,
-            fPercent, tPercent, jPercent, pPercent) {
+            fPercent, tPercent, jPercent, pPercent, MyMBTI, mbtiCounts) {
 
 
             const summaryElem = document.querySelector(".summary-title");
 
-            if (mistypeCount === 0) {
-                summaryElem.innerHTML = `<span class="mbti-highlight" style=" color: #4CAF50;">Everyone</span> perceived you as your type.`;
-            } else {
-                summaryElem.innerHTML =
-                    `<span class="mbti-highlight" style=" color: #F44336;">${mistypeCount}</span> out of <span class="mbti-highlight" style=" color: #F44336;">${totalCount}</span> people perceive you 
-                    <span class="mbti-highlight" style=" color: #F44336;">not your type</span>, 
-                    the most common mistypes are <span class="mbti-highlight"  style=" color: #F44336;">${mostCommonMistype}.</span> 
+            // if (mistypeCount === 0) {
+            //     summaryElem.innerHTML = `<span class="mbti-highlight" style=" color: #4CAF50;">Everyone</span> perceived you as your type.`;
+            // } else {
+            //     summaryElem.innerHTML =
+            //         `<span class="mbti-highlight" style=" color: #F44336;">${mistypeCount}</span> out of <span class="mbti-highlight" style=" color: #F44336;">${totalCount}</span> people perceive you 
+            //         <span class="mbti-highlight" style=" color: #F44336;">not your type</span>, 
+            //         the most common mistypes are <span class="mbti-highlight"  style=" color: #F44336;">${mostCommonMistype}. </span>
+            //         <span> </span>
+            //         Refer more The ★☆ 
 
-                    `;
+            //         `;
+            // }
+            if (mistypeCount === 0) {
+                summaryElem.innerHTML = `<span class="mbti-highlight" style="color: #4CAF50;">Everyone</span> perceived you as your type.`;
+            } else {
+                // 确定用户的MBTI类型属于哪个组
+                let userTypeGroup = "";
+                let groupColor = "";
+                let groupDescription = "";
+
+                if (["INTJ", "INTP", "ENTJ", "ENTP"].includes(MyMBTI)) {
+                    userTypeGroup = "Analysts";
+                    groupColor = "#9B6784";
+                    groupDescription = "rational, logical, and objective thinkers who excel at problem-solving and strategic planning";
+                } else if (["INFJ", "INFP", "ENFJ", "ENFP"].includes(MyMBTI)) {
+                    userTypeGroup = "Diplomats";
+                    groupColor = "#61AD89";
+                    groupDescription = "empathetic, idealistic, and value-driven individuals who focus on personal growth and meaningful connections";
+                } else if (["ISTJ", "ISFJ", "ESTJ", "ESFJ"].includes(MyMBTI)) {
+                    userTypeGroup = "Sentinels";
+                    groupColor = "#80CCDF";
+                    groupDescription = "practical, detail-oriented, and responsibility-focused individuals who value security and tradition";
+                } else if (["ISTP", "ISFP", "ESTP", "ESFP"].includes(MyMBTI)) {
+                    userTypeGroup = "Explorers";
+                    groupColor = "#E1C134";
+                    groupDescription = "spontaneous, adaptable, and present-focused individuals who excel at practical problem-solving and enjoying the moment";
+                }
+
+                // 计算各个类型组的认知百分比
+                const groupPerceptions = {
+                    "Analysts": 0,
+                    "Diplomats": 0,
+                    "Sentinels": 0,
+                    "Explorers": 0
+                };
+
+                // 假设我们有一个mbtiCounts对象包含了所有类型的计数
+                let total = 0;
+                for (const type in mbtiCounts) {
+
+                    total += mbtiCounts[type] || 0;
+
+                    if (["INTJ", "INTP", "ENTJ", "ENTP"].includes(type)) {
+                        groupPerceptions["Analysts"] += mbtiCounts[type] || 0;
+                    } else if (["INFJ", "INFP", "ENFJ", "ENFP"].includes(type)) {
+                        groupPerceptions["Diplomats"] += mbtiCounts[type] || 0;
+                    } else if (["ISTJ", "ISFJ", "ESTJ", "ESFJ"].includes(type)) {
+                        groupPerceptions["Sentinels"] += mbtiCounts[type] || 0;
+                    } else if (["ISTP", "ISFP", "ESTP", "ESFP"].includes(type)) {
+                        groupPerceptions["Explorers"] += mbtiCounts[type] || 0;
+                    }
+                }
+
+                // 计算各组百分比
+                const percentages = {};
+                for (const group in groupPerceptions) {
+                    percentages[group] = total > 0 ? Math.round((groupPerceptions[group] / total) * 100) : 0;
+                }
+                console.log(percentages);
+                // 找出除了用户自己组外认为最多的组
+                let otherGroups = Object.keys(percentages).filter(g => g !== userTypeGroup);
+                let topMisperceiveGroup = otherGroups.reduce((a, b) => percentages[a] > percentages[b] ? a : b);
+                
+
+                if (topMisperceiveGroup === "Analysts") topMisperceiveColor = "#9B6784";
+                else if (topMisperceiveGroup === "Diplomats") topMisperceiveColor = "#61AD89";
+                else if (topMisperceiveGroup === "Sentinels") topMisperceiveColor = "#80CCDF";
+                else if (topMisperceiveGroup === "Explorers") topMisperceiveColor = "#E1C134";
+
+                summaryElem.innerHTML =
+                    `<span class="mbti-highlight" style=" font:bold">${mistypeCount}</span> out of <span class="mbti-highlight" style=" style=" font:bold";">${totalCount}</span> people perceive you 
+        <span class="mbti-highlight" style=" font:bold">not your type</span>, 
+        the most common mistypes are <span class="mbti-highlight" style=" font:bold">${mostCommonMistype}. </span>
+        You are a <span class="mbti-highlight" style="color: ${groupColor};">${userTypeGroup} (${MyMBTI})</span>.
+        Most people who don't see you as your true type perceive you as a <span class="mbti-highlight" style="color: ${topMisperceiveColor};">${topMisperceiveGroup}</span> type.
+         </p>
+        <p style="margin: 5px 0 0 0; font-style: italic; color: #666; font-size: 12px; text-align: center;"># of ★ indicates how many dimensions match your MBTI.</p>`;
             }
 
             const summaryList = document.querySelector(".summary-list");
@@ -1672,13 +2072,13 @@
             perceptionDimensionElem.innerHTML = `
   <div style=" text-align: left;">
     <div >
-      People's average impression of you is <span class="mbti-highlight" style="color: ${perceivedType === MyMBTI ? '#4CAF50' : '#F44336'}">${perceivedType}.</span>
+    People's average impression of you is <span class="mbti-highlight" style="color: ${perceivedType === MyMBTI ? groupColor : '#F44336'}">${perceivedType}.</span>
     </div>
     <div>
-      <span class="mbti-highlight" style="color: #4CAF50;">${dataPoints[0]}%</span> people correctly perceive your ${MyMBTI[0]} dimension, 
-      <span class="mbti-highlight" style=" color: #4CAF50;">${dataPoints[1]}%</span> your ${MyMBTI[1]} dimension, 
-      <span class="mbti-highlight" style="color: #4CAF50;">${dataPoints[2]}%</span> your ${MyMBTI[2]} dimension, 
-      <span class="mbti-highlight" style=" color: #4CAF50;">${dataPoints[3]}%</span> your ${MyMBTI[3]} dimension.
+      <span class="mbti-highlight" style="color: ${groupColor};">${dataPoints[0]}%</span> people correctly perceive your ${MyMBTI[0]} dimension, 
+      <span class="mbti-highlight" style=" color: ${groupColor};">${dataPoints[1]}%</span> your ${MyMBTI[1]} dimension, 
+      <span class="mbti-highlight" style="color:${groupColor};">${dataPoints[2]}%</span> your ${MyMBTI[2]} dimension, 
+      <span class="mbti-highlight" style=" color:${groupColor};">${dataPoints[3]}%</span> your ${MyMBTI[3]} dimension.
     </div> 
   </div>
 `;
@@ -1694,9 +2094,9 @@
                     datasets: [{
                         label: '% of matching perceptions: ',
                         data: dataPoints,
-                        backgroundColor: 'rgba(76, 175, 80, 0.4)',
-                        borderColor: '#4CAF50',
-                        pointBackgroundColor: '#4CAF50',
+                        backgroundColor: groupColor+66,
+                        borderColor: groupColor,
+                        pointBackgroundColor: groupColor,
                         pointBorderColor: '#fff',
                         pointRadius: 3,
                         borderWidth: 1
@@ -1715,7 +2115,7 @@
                             angleLines: { color: '#e0e0e0' },
                             pointLabels: {
                                 font: { family: 'Poppins', size: 20 },
-                                color: '#4CAF50'
+                                color: groupColor
                             }
                         }
                     },
